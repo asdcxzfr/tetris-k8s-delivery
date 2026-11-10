@@ -43,4 +43,4 @@
 ./05-backups/tetris-app-alerts-backup-20261013-095945.yaml           6368  d58ef4110b39
 ./05-backups/tetris-app-alerts-backup-before-appdown-103639.yaml     8328  2d6ebbdd7727
 ./99-tools/export-clean.py                                           2130  2357e505ec65
-./README.md                                                         14054  4c326b3be960
+./README.md                                                         15613  7dfca5052c43
