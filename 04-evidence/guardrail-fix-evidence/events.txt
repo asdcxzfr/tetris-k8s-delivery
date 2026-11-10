@@ -1,0 +1,10 @@
+5m11s       Normal    SuccessfulCreate         job/fd8a9b05-3af7-4c46-9ee7-f59eb1e05702.gameplay-smoke.1         Created pod: fd8a9b05-3af7-4c46-9ee7-f59eb1e05702.gameplay-smoke.1-8v4mq
+5m11s       Normal    Scheduled                pod/fd8a9b05-3af7-4c46-9ee7-f59eb1e05702.gameplay-smoke.1-8v4mq   Successfully assigned tetris-test/fd8a9b05-3af7-4c46-9ee7-f59eb1e05702.gameplay-smoke.1-8v4mq to harbor
+5m10s       Normal    Created                  pod/fd8a9b05-3af7-4c46-9ee7-f59eb1e05702.gameplay-smoke.1-8v4mq   Created container smoke
+5m10s       Normal    Pulled                   pod/fd8a9b05-3af7-4c46-9ee7-f59eb1e05702.gameplay-smoke.1-8v4mq   Container image "harbor.local/tetris-game/tetris-game:test-branch-31" already present on machine
+5m9s        Normal    Started                  pod/fd8a9b05-3af7-4c46-9ee7-f59eb1e05702.gameplay-smoke.1-8v4mq   Started container smoke
+4m41s       Warning   BackoffLimitExceeded     job/fd8a9b05-3af7-4c46-9ee7-f59eb1e05702.gameplay-smoke.1         Job has reached the specified backoff limit
+4m34s       Warning   AnalysisRunFailed        rollout/tetris-game                                               Background Analysis Run 'tetris-game-79776b7bb6-25' Status New: 'Failed' Previous: 'Running'
+4m34s       Warning   AnalysisRunFailed        analysisrun/tetris-game-79776b7bb6-25                             Analysis Completed. Result: Failed
+4m34s       Warning   MetricFailed             analysisrun/tetris-game-79776b7bb6-25                             Metric 'gameplay-smoke' Completed. Result: Failed
+4m34s       Warning   RolloutAborted           rollout/tetris-game                                               Rollout aborted update to revision 25: Background analysis phase error/failed: Metric "gameplay-smoke" assessed Failed due to failed (1) > failureLimit (0)

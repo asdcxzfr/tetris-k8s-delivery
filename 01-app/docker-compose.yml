@@ -1,0 +1,9 @@
+services:
+  tetris:
+    build: .
+    image: tetris-game:${IMAGE_TAG}
+    container_name: tetris-websocket
+    ports:
+      - "5000:5000"
+    restart: unless-stopped
+

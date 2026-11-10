@@ -1,0 +1,372 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisRun
+metadata:
+  annotations:
+    rollout.argoproj.io/revision: "23"
+  creationTimestamp: "2026-10-12T04:31:33Z"
+  generation: 15
+  labels:
+    app: tetris-game
+    rollout-type: Background
+    rollouts-pod-template-hash: 79776b7bb6
+  name: tetris-game-79776b7bb6-23
+  namespace: tetris-test
+  ownerReferences:
+  - apiVersion: argoproj.io/v1alpha1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Rollout
+    name: tetris-game
+    uid: a808e18c-90a7-4161-ab8e-4586176637f9
+  resourceVersion: "4283997"
+  uid: 67dc795e-2212-4d31-bbba-09acd7311de7
+spec:
+  args:
+  - name: canary-hash
+    value: 79776b7bb6
+  metrics:
+  - consecutiveErrorLimit: 10
+    failureCondition: result[0] >= 0.05
+    failureLimit: 0
+    initialDelay: 60s
+    interval: 1m
+    name: business-error-rate
+    provider:
+      prometheus:
+        address: http://kube-prometheus-stack-prometheus.monitoring.svc:9090
+        authentication:
+          oauth2: {}
+          sigv4: {}
+        query: |
+          sum(rate(tetris_errors_total{namespace="tetris-test",
+              rollouts_pod_template_hash="{{args.canary-hash}}"}[2m])) or vector(0)
+  - consecutiveErrorLimit: 10
+    failureCondition: result[0] >= 0.05
+    failureLimit: 0
+    initialDelay: 60s
+    interval: 1m
+    name: http-5xx-rate
+    provider:
+      prometheus:
+        address: http://kube-prometheus-stack-prometheus.monitoring.svc:9090
+        authentication:
+          oauth2: {}
+          sigv4: {}
+        query: |
+          (sum(rate(flask_http_request_total{namespace="tetris-test",
+               status=~"5..", rollouts_pod_template_hash="{{args.canary-hash}}"}[2m]))
+           or (0 * sum(rate(flask_http_request_total{namespace="tetris-test",
+               rollouts_pod_template_hash="{{args.canary-hash}}"}[2m]))))
+          /
+          clamp_min(sum(rate(flask_http_request_total{namespace="tetris-test",
+               rollouts_pod_template_hash="{{args.canary-hash}}"}[2m])), 0.001)
+          or vector(0)
+  - consecutiveErrorLimit: 10
+    failureCondition: result[0] >= 0.2
+    failureLimit: 0
+    initialDelay: 60s
+    interval: 1m
+    name: game-start-failure-ratio
+    provider:
+      prometheus:
+        address: http://kube-prometheus-stack-prometheus.monitoring.svc:9090
+        authentication:
+          oauth2: {}
+          sigv4: {}
+        query: |
+          sum(rate(tetris_game_start_failed_total{namespace="tetris-test",
+              rollouts_pod_template_hash="{{args.canary-hash}}"}[5m]))
+          /
+          clamp_min(sum(rate(tetris_game_start_total{namespace="tetris-test",
+              rollouts_pod_template_hash="{{args.canary-hash}}"}[5m])), 0.001)
+          or vector(0)
+  - consecutiveErrorLimit: 3
+    failureCondition: result[0] < 1
+    failureLimit: 1
+    initialDelay: 60s
+    interval: 30s
+    name: app-up
+    provider:
+      prometheus:
+        address: http://kube-prometheus-stack-prometheus.monitoring.svc:9090
+        authentication:
+          oauth2: {}
+          sigv4: {}
+        query: |
+          sum(up{namespace="tetris-test",
+              rollouts_pod_template_hash="{{args.canary-hash}}"}) or vector(0)
+  - consecutiveErrorLimit: 10
+    failureCondition: result[0] > 0.5
+    failureLimit: 1
+    initialDelay: 60s
+    interval: 1m
+    name: p95-latency
+    provider:
+      prometheus:
+        address: http://kube-prometheus-stack-prometheus.monitoring.svc:9090
+        authentication:
+          oauth2: {}
+          sigv4: {}
+        query: |
+          histogram_quantile(0.95,
+            sum(rate(flask_http_request_duration_seconds_bucket{namespace="tetris-test",
+                rollouts_pod_template_hash="{{args.canary-hash}}"}[2m])) by (le))
+          or vector(0)
+  - consecutiveErrorLimit: 10
+    failureCondition: result[0] >= 1
+    failureLimit: 1
+    initialDelay: 60s
+    interval: 1m
+    name: exceptions
+    provider:
+      prometheus:
+        address: http://kube-prometheus-stack-prometheus.monitoring.svc:9090
+        authentication:
+          oauth2: {}
+          sigv4: {}
+        query: |
+          sum(rate(flask_http_request_exceptions_total{namespace="tetris-test",
+              rollouts_pod_template_hash="{{args.canary-hash}}"}[2m])) or vector(0)
+  terminate: true
+status:
+  completedAt: "2026-10-12T04:37:40Z"
+  dryRunSummary: {}
+  message: Run Terminated
+  metricResults:
+  - consecutiveSuccess: 6
+    count: 6
+    measurements:
+    - finishedAt: "2026-10-12T04:32:33Z"
+      phase: Successful
+      startedAt: "2026-10-12T04:32:33Z"
+      value: '[0]'
+    - finishedAt: "2026-10-12T04:33:33Z"
+      phase: Successful
+      startedAt: "2026-10-12T04:33:33Z"
+      value: '[0]'
+    - finishedAt: "2026-10-12T04:34:33Z"
+      phase: Successful
+      startedAt: "2026-10-12T04:34:33Z"
+      value: '[0]'
+    - finishedAt: "2026-10-12T04:35:33Z"
+      phase: Successful
+      startedAt: "2026-10-12T04:35:33Z"
+      value: '[0]'
+    - finishedAt: "2026-10-12T04:36:33Z"
+      phase: Successful
+      startedAt: "2026-10-12T04:36:33Z"
+      value: '[0]'
+    - finishedAt: "2026-10-12T04:37:33Z"
+      phase: Successful
+      startedAt: "2026-10-12T04:37:33Z"
+      value: '[0]'
+    metadata:
+      ResolvedPrometheusQuery: |
+        sum(rate(flask_http_request_exceptions_total{namespace="tetris-test",
+            rollouts_pod_template_hash="79776b7bb6"}[2m])) or vector(0)
+    name: exceptions
+    phase: Successful
+    successful: 6
+  - consecutiveSuccess: 6
+    count: 6
+    measurements:
+    - finishedAt: "2026-10-12T04:32:33Z"
+      phase: Successful
+      startedAt: "2026-10-12T04:32:33Z"
+      value: '[0]'
+    - finishedAt: "2026-10-12T04:33:33Z"
+      phase: Successful
+      startedAt: "2026-10-12T04:33:33Z"
+      value: '[0]'
+    - finishedAt: "2026-10-12T04:34:33Z"
+      phase: Successful
+      startedAt: "2026-10-12T04:34:33Z"
+      value: '[0]'
+    - finishedAt: "2026-10-12T04:35:33Z"
+      phase: Successful
+      startedAt: "2026-10-12T04:35:33Z"
+      value: '[0]'
+    - finishedAt: "2026-10-12T04:36:33Z"
+      phase: Successful
+      startedAt: "2026-10-12T04:36:33Z"
+      value: '[0]'
+    - finishedAt: "2026-10-12T04:37:33Z"
+      phase: Successful
+      startedAt: "2026-10-12T04:37:33Z"
+      value: '[0]'
+    metadata:
+      ResolvedPrometheusQuery: |
+        (sum(rate(flask_http_request_total{namespace="tetris-test",
+             status=~"5..", rollouts_pod_template_hash="79776b7bb6"}[2m]))
+         or (0 * sum(rate(flask_http_request_total{namespace="tetris-test",
+             rollouts_pod_template_hash="79776b7bb6"}[2m]))))
+        /
+        clamp_min(sum(rate(flask_http_request_total{namespace="tetris-test",
+             rollouts_pod_template_hash="79776b7bb6"}[2m])), 0.001)
+        or vector(0)
+    name: http-5xx-rate
+    phase: Successful
+    successful: 6
+  - consecutiveSuccess: 6
+    count: 6
+    measurements:
+    - finishedAt: "2026-10-12T04:32:33Z"
+      phase: Successful
+      startedAt: "2026-10-12T04:32:33Z"
+      value: '[0]'
+    - finishedAt: "2026-10-12T04:33:33Z"
+      phase: Successful
+      startedAt: "2026-10-12T04:33:33Z"
+      value: '[0]'
+    - finishedAt: "2026-10-12T04:34:33Z"
+      phase: Successful
+      startedAt: "2026-10-12T04:34:33Z"
+      value: '[0]'
+    - finishedAt: "2026-10-12T04:35:33Z"
+      phase: Successful
+      startedAt: "2026-10-12T04:35:33Z"
+      value: '[0]'
+    - finishedAt: "2026-10-12T04:36:33Z"
+      phase: Successful
+      startedAt: "2026-10-12T04:36:33Z"
+      value: '[0]'
+    - finishedAt: "2026-10-12T04:37:33Z"
+      phase: Successful
+      startedAt: "2026-10-12T04:37:33Z"
+      value: '[0]'
+    metadata:
+      ResolvedPrometheusQuery: |
+        sum(rate(tetris_game_start_failed_total{namespace="tetris-test",
+            rollouts_pod_template_hash="79776b7bb6"}[5m]))
+        /
+        clamp_min(sum(rate(tetris_game_start_total{namespace="tetris-test",
+            rollouts_pod_template_hash="79776b7bb6"}[5m])), 0.001)
+        or vector(0)
+    name: game-start-failure-ratio
+    phase: Successful
+    successful: 6
+  - consecutiveSuccess: 6
+    count: 6
+    measurements:
+    - finishedAt: "2026-10-12T04:32:33Z"
+      phase: Successful
+      startedAt: "2026-10-12T04:32:33Z"
+      value: '[0]'
+    - finishedAt: "2026-10-12T04:33:33Z"
+      phase: Successful
+      startedAt: "2026-10-12T04:33:33Z"
+      value: '[0]'
+    - finishedAt: "2026-10-12T04:34:33Z"
+      phase: Successful
+      startedAt: "2026-10-12T04:34:33Z"
+      value: '[0]'
+    - finishedAt: "2026-10-12T04:35:33Z"
+      phase: Successful
+      startedAt: "2026-10-12T04:35:33Z"
+      value: '[0]'
+    - finishedAt: "2026-10-12T04:36:33Z"
+      phase: Successful
+      startedAt: "2026-10-12T04:36:33Z"
+      value: '[0]'
+    - finishedAt: "2026-10-12T04:37:33Z"
+      phase: Successful
+      startedAt: "2026-10-12T04:37:33Z"
+      value: '[0]'
+    metadata:
+      ResolvedPrometheusQuery: |
+        sum(rate(tetris_errors_total{namespace="tetris-test",
+            rollouts_pod_template_hash="79776b7bb6"}[2m])) or vector(0)
+    name: business-error-rate
+    phase: Successful
+    successful: 6
+  - consecutiveSuccess: 6
+    count: 6
+    measurements:
+    - finishedAt: "2026-10-12T04:32:33Z"
+      phase: Successful
+      startedAt: "2026-10-12T04:32:33Z"
+      value: '[0.021250000000000005]'
+    - finishedAt: "2026-10-12T04:33:33Z"
+      phase: Successful
+      startedAt: "2026-10-12T04:33:33Z"
+      value: '[0.016250000000000004]'
+    - finishedAt: "2026-10-12T04:34:33Z"
+      phase: Successful
+      startedAt: "2026-10-12T04:34:33Z"
+      value: '[0.00475]'
+    - finishedAt: "2026-10-12T04:35:33Z"
+      phase: Successful
+      startedAt: "2026-10-12T04:35:33Z"
+      value: '[0.004889705882352942]'
+    - finishedAt: "2026-10-12T04:36:33Z"
+      phase: Successful
+      startedAt: "2026-10-12T04:36:33Z"
+      value: '[0.0048449374994795095]'
+    - finishedAt: "2026-10-12T04:37:33Z"
+      phase: Successful
+      startedAt: "2026-10-12T04:37:33Z"
+      value: '[0.004749999999999999]'
+    metadata:
+      ResolvedPrometheusQuery: |
+        histogram_quantile(0.95,
+          sum(rate(flask_http_request_duration_seconds_bucket{namespace="tetris-test",
+              rollouts_pod_template_hash="79776b7bb6"}[2m])) by (le))
+        or vector(0)
+    name: p95-latency
+    phase: Successful
+    successful: 6
+  - consecutiveSuccess: 11
+    count: 11
+    measurements:
+    - finishedAt: "2026-10-12T04:33:03Z"
+      phase: Successful
+      startedAt: "2026-10-12T04:33:03Z"
+      value: '[1]'
+    - finishedAt: "2026-10-12T04:33:33Z"
+      phase: Successful
+      startedAt: "2026-10-12T04:33:33Z"
+      value: '[1]'
+    - finishedAt: "2026-10-12T04:34:03Z"
+      phase: Successful
+      startedAt: "2026-10-12T04:34:03Z"
+      value: '[1]'
+    - finishedAt: "2026-10-12T04:34:33Z"
+      phase: Successful
+      startedAt: "2026-10-12T04:34:33Z"
+      value: '[1]'
+    - finishedAt: "2026-10-12T04:35:03Z"
+      phase: Successful
+      startedAt: "2026-10-12T04:35:03Z"
+      value: '[1]'
+    - finishedAt: "2026-10-12T04:35:33Z"
+      phase: Successful
+      startedAt: "2026-10-12T04:35:33Z"
+      value: '[1]'
+    - finishedAt: "2026-10-12T04:36:03Z"
+      phase: Successful
+      startedAt: "2026-10-12T04:36:03Z"
+      value: '[2]'
+    - finishedAt: "2026-10-12T04:36:33Z"
+      phase: Successful
+      startedAt: "2026-10-12T04:36:33Z"
+      value: '[2]'
+    - finishedAt: "2026-10-12T04:37:03Z"
+      phase: Successful
+      startedAt: "2026-10-12T04:37:03Z"
+      value: '[2]'
+    - finishedAt: "2026-10-12T04:37:33Z"
+      phase: Successful
+      startedAt: "2026-10-12T04:37:33Z"
+      value: '[2]'
+    metadata:
+      ResolvedPrometheusQuery: |
+        sum(up{namespace="tetris-test",
+            rollouts_pod_template_hash="79776b7bb6"}) or vector(0)
+    name: app-up
+    phase: Successful
+    successful: 11
+  phase: Successful
+  runSummary:
+    count: 6
+    successful: 6
+  startedAt: "2026-10-12T04:31:33Z"

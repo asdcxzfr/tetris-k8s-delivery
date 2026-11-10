@@ -1,0 +1,200 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.container {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+.game-wrapper {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.game-area {
+    background: #1a1a2e;
+    border-radius: 10px;
+    padding: 10px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+}
+
+#gameCanvas {
+    display: block;
+    margin: 0 auto;
+    box-shadow: 0 0 0 2px #ffd700;
+    border-radius: 4px;
+}
+
+.info-area {
+    background: rgba(26, 26, 46, 0.95);
+    border-radius: 15px;
+    padding: 20px;
+    min-width: 220px;
+}
+
+.info-card, .controls-card {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.info-card h3, .controls-card h3 {
+    color: #ffd700;
+    font-size: 16px;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.player-id {
+    color: #4ade80;
+    font-size: 12px;
+    word-break: break-all;
+    font-family: monospace;
+}
+
+.score, .lines, .level {
+    font-size: 32px;
+    font-weight: bold;
+    color: #fff;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+#nextCanvas {
+    background: #1a1a2e;
+    border: 2px solid #ffd700;
+    border-radius: 8px;
+    margin: 10px auto 0;
+    display: block;
+}
+
+.control-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    font-size: 14px;
+    color: #eee;
+}
+
+.key {
+    background: #16213e;
+    padding: 2px 10px;
+    border-radius: 5px;
+    font-weight: bold;
+    color: #ffd700;
+    font-family: monospace;
+}
+
+.restart-btn {
+    width: 100%;
+    padding: 10px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.restart-btn:hover {
+    transform: scale(1.02);
+}
+
+.restart-btn:active {
+    transform: scale(0.98);
+}
+
+.status-message {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 20px;
+    font-weight: bold;
+    color: #ffd700;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+@media (max-width: 600px) {
+    .game-wrapper {
+        flex-direction: column;
+    }
+    
+    .info-area {
+        min-width: auto;
+    }
+    
+    .control-item {
+        font-size: 12px;
+    }
+}
+
+/* 添加到文件末尾 */
+.start-btn {
+    width: 100%;
+    padding: 15px;
+    background: linear-gradient(135deg, #4ade80, #22c55e);
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-bottom: 15px;
+    transition: all 0.3s;
+}
+
+.start-btn:hover {
+    transform: scale(1.02);
+    box-shadow: 0 5px 15px rgba(74, 222, 128, 0.3);
+}
+
+.start-btn:disabled {
+    background: #666;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.logout-btn {
+    width: 100%;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid #ff6b6b;
+    border-radius: 8px;
+    color: #ff6b6b;
+    font-size: 14px;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: all 0.3s;
+}
+
+.logout-btn:hover {
+    background: #ff6b6b;
+    color: white;
+}
+
+.player-name {
+    font-size: 18px;
+    font-weight: bold;
+    color: #4ade80;
+    margin-bottom: 5px;
+}

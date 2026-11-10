@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>俄罗斯方块 - 游戏</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="game-wrapper">
+            <div class="game-area">
+                <canvas id="gameCanvas" width="300" height="600"></canvas>
+            </div>
+            <div class="info-area">
+                <div class="info-card">
+                    <h3>玩家信息</h3>
+                    <div class="player-name" id="playerName">加载中...</div>
+                    <div class="player-id" id="playerId"></div>
+                </div>
+                <div class="info-card">
+                    <h3>分数</h3>
+                    <div class="score" id="score">0</div>
+                </div>
+                <div class="info-card">
+                    <h3>消除行数</h3>
+                    <div class="lines" id="lines">0</div>
+                </div>
+                <div class="info-card">
+                    <h3>等级</h3>
+                    <div class="level" id="level">1</div>
+                </div>
+                <div class="info-card">
+                    <h3>下一个</h3>
+                    <canvas id="nextCanvas" width="120" height="120"></canvas>
+                </div>
+                
+                <!-- 开始游戏按钮 -->
+                <button class="start-btn" id="startBtn">▶ 开始游戏</button>
+                
+                <div class="controls-card">
+                    <h3>操作说明</h3>
+                    <div class="control-item">
+                        <span class="key">←</span><span>左移</span>
+                    </div>
+                    <div class="control-item">
+                        <span class="key">→</span><span>右移</span>
+                    </div>
+                    <div class="control-item">
+                        <span class="key">↑</span><span>旋转</span>
+                    </div>
+                    <div class="control-item">
+                        <span class="key">↓</span><span>下移</span>
+                    </div>
+                    <div class="control-item">
+                        <span class="key">空格</span><span>直接到底</span>
+                    </div>
+                    <div class="control-item">
+                        <span class="key">P</span><span>暂停/继续</span>
+                    </div>
+                    <div class="control-item">
+                        <span class="key">R</span><span>重新开始</span>
+                    </div>
+                </div>
+                
+                <button class="logout-btn" id="logoutBtn">退出登录</button>
+            </div>
+        </div>
+        <div class="status-message" id="statusMessage"></div>
+    </div>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>

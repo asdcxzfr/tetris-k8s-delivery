@@ -1,0 +1,145 @@
+apiVersion: v1
+data:
+  tetris-dashboard.json: "{\n  \"annotations\": {\n    \"list\": [\n      {\n        \"builtIn\": 1,\n        \"datasource\": { \"type\": \"grafana\", \"uid\": \"-- Grafana --\" },\n        \"enable\":\
+    \ true,\n        \"hide\": true,\n        \"iconColor\": \"rgba(0, 211, 255, 1)\",\n        \"name\": \"Annotations & Alerts\",\n        \"type\": \"dashboard\"\n      }\n    ]\n  },\n  \"editable\"\
+    : true,\n  \"fiscalYearStartMonth\": 0,\n  \"graphTooltip\": 1,\n  \"id\": null,\n  \"links\": [],\n  \"panels\": [\n    {\n      \"datasource\": { \"type\": \"prometheus\", \"uid\": \"prometheus\"\
+    \ },\n      \"fieldConfig\": {\n        \"defaults\": {\n          \"color\": { \"mode\": \"palette-classic\" },\n          \"custom\": {\n            \"axisCenteredZero\": false,\n            \"axisColorMode\"\
+    : \"text\",\n            \"axisPlacement\": \"auto\",\n            \"barAlignment\": 0,\n            \"drawStyle\": \"line\",\n            \"fillOpacity\": 10,\n            \"gradientMode\": \"none\"\
+    ,\n            \"hideFrom\": { \"legend\": false, \"tooltip\": false, \"viz\": false },\n            \"lineInterpolation\": \"linear\",\n            \"lineWidth\": 1,\n            \"pointSize\": 5,\n\
+    \            \"scaleDistribution\": { \"type\": \"linear\" },\n            \"showPoints\": \"never\",\n            \"spanNulls\": false,\n            \"stacking\": { \"group\": \"A\", \"mode\": \"none\"\
+    \ },\n            \"thresholdsStyle\": { \"mode\": \"off\" }\n          },\n          \"mappings\": [],\n          \"thresholds\": { \"mode\": \"absolute\", \"steps\": [{ \"color\": \"green\", \"value\"\
+    : null }] },\n          \"unit\": \"reqps\"\n        },\n        \"overrides\": []\n      },\n      \"gridPos\": { \"h\": 8, \"w\": 12, \"x\": 0, \"y\": 0 },\n      \"id\": 1,\n      \"options\": {\n\
+    \        \"legend\": { \"calcs\": [], \"displayMode\": \"table\", \"placement\": \"bottom\", \"showLegend\": true },\n        \"tooltip\": { \"mode\": \"multi\", \"sort\": \"desc\" }\n      },\n   \
+    \   \"targets\": [\n        {\n          \"datasource\": { \"type\": \"prometheus\", \"uid\": \"prometheus\" },\n          \"editorMode\": \"code\",\n          \"expr\": \"sum by (rollouts_pod_template_hash)\
+    \ (rate(flask_http_request_total{namespace=\\\"tetris-test\\\", rollouts_pod_template_hash=~\\\"$version\\\"}[1m]))\",\n          \"legendFormat\": \"{{rollouts_pod_template_hash}}\",\n          \"\
+    range\": true,\n          \"refId\": \"A\"\n        }\n      ],\n      \"title\": \"请求速率 QPS (按版本)\",\n      \"type\": \"timeseries\"\n    },\n    {\n      \"datasource\": { \"type\": \"prometheus\"\
+    , \"uid\": \"prometheus\" },\n      \"fieldConfig\": {\n        \"defaults\": {\n          \"color\": { \"mode\": \"palette-classic\" },\n          \"custom\": {\n            \"axisCenteredZero\": false,\n\
+    \            \"axisColorMode\": \"text\",\n            \"axisPlacement\": \"auto\",\n            \"barAlignment\": 0,\n            \"drawStyle\": \"line\",\n            \"fillOpacity\": 10,\n      \
+    \      \"gradientMode\": \"none\",\n            \"hideFrom\": { \"legend\": false, \"tooltip\": false, \"viz\": false },\n            \"lineInterpolation\": \"linear\",\n            \"lineWidth\": 1,\n\
+    \            \"pointSize\": 5,\n            \"scaleDistribution\": { \"type\": \"linear\" },\n            \"showPoints\": \"never\",\n            \"spanNulls\": false,\n            \"stacking\": { \"\
+    group\": \"A\", \"mode\": \"none\" },\n            \"thresholdsStyle\": { \"mode\": \"off\" }\n          },\n          \"mappings\": [],\n          \"thresholds\": { \"mode\": \"absolute\", \"steps\"\
+    : [{ \"color\": \"green\", \"value\": null }, { \"color\": \"red\", \"value\": 0.05 }] },\n          \"unit\": \"percentunit\"\n        },\n        \"overrides\": []\n      },\n      \"gridPos\": {\
+    \ \"h\": 8, \"w\": 12, \"x\": 12, \"y\": 0 },\n      \"id\": 2,\n      \"options\": {\n        \"legend\": { \"calcs\": [], \"displayMode\": \"table\", \"placement\": \"bottom\", \"showLegend\": true\
+    \ },\n        \"tooltip\": { \"mode\": \"multi\", \"sort\": \"desc\" }\n      },\n      \"targets\": [\n        {\n          \"datasource\": { \"type\": \"prometheus\", \"uid\": \"prometheus\" },\n\
+    \          \"editorMode\": \"code\",\n          \"expr\": \"(sum by (rollouts_pod_template_hash) (rate(flask_http_request_total{namespace=\\\"tetris-test\\\", status=~\\\"5..\\\", rollouts_pod_template_hash=~\\\
+    \"$version\\\"}[2m])) or (0 * sum by (rollouts_pod_template_hash) (rate(flask_http_request_total{namespace=\\\"tetris-test\\\", rollouts_pod_template_hash=~\\\"$version\\\"}[2m])))) / clamp_min(sum\
+    \ by (rollouts_pod_template_hash) (rate(flask_http_request_total{namespace=\\\"tetris-test\\\", rollouts_pod_template_hash=~\\\"$version\\\"}[2m])), 0.001)\",\n          \"legendFormat\": \"{{rollouts_pod_template_hash}}\"\
+    ,\n          \"range\": true,\n          \"refId\": \"A\"\n        }\n      ],\n      \"title\": \"错误率 5xx (按版本)\",\n      \"type\": \"timeseries\"\n    },\n    {\n      \"datasource\": { \"type\":\
+    \ \"prometheus\", \"uid\": \"prometheus\" },\n      \"fieldConfig\": {\n        \"defaults\": {\n          \"color\": { \"mode\": \"palette-classic\" },\n          \"custom\": {\n            \"axisCenteredZero\"\
+    : false,\n            \"axisColorMode\": \"text\",\n            \"axisPlacement\": \"auto\",\n            \"barAlignment\": 0,\n            \"drawStyle\": \"line\",\n            \"fillOpacity\": 10,\n\
+    \            \"gradientMode\": \"none\",\n            \"hideFrom\": { \"legend\": false, \"tooltip\": false, \"viz\": false },\n            \"lineInterpolation\": \"linear\",\n            \"lineWidth\"\
+    : 1,\n            \"pointSize\": 5,\n            \"scaleDistribution\": { \"type\": \"linear\" },\n            \"showPoints\": \"never\",\n            \"spanNulls\": true,\n            \"stacking\"\
+    : { \"group\": \"A\", \"mode\": \"none\" },\n            \"thresholdsStyle\": { \"mode\": \"off\" }\n          },\n          \"mappings\": [],\n          \"thresholds\": { \"mode\": \"absolute\", \"\
+    steps\": [{ \"color\": \"green\", \"value\": null }, { \"color\": \"red\", \"value\": 0.5 }] },\n          \"unit\": \"s\"\n        },\n        \"overrides\": []\n      },\n      \"gridPos\": { \"h\"\
+    : 8, \"w\": 12, \"x\": 0, \"y\": 8 },\n      \"id\": 3,\n      \"options\": {\n        \"legend\": { \"calcs\": [], \"displayMode\": \"table\", \"placement\": \"bottom\", \"showLegend\": true },\n \
+    \       \"tooltip\": { \"mode\": \"multi\", \"sort\": \"desc\" }\n      },\n      \"targets\": [\n        {\n          \"datasource\": { \"type\": \"prometheus\", \"uid\": \"prometheus\" },\n      \
+    \    \"editorMode\": \"code\",\n          \"expr\": \"histogram_quantile(0.95, sum by (le, rollouts_pod_template_hash) (rate(flask_http_request_duration_seconds_bucket{namespace=\\\"tetris-test\\\"\
+    , rollouts_pod_template_hash=~\\\"$version\\\"}[2m])))\",\n          \"legendFormat\": \"p95 {{rollouts_pod_template_hash}}\",\n          \"range\": true,\n          \"refId\": \"A\"\n        }\n  \
+    \    ],\n      \"title\": \"P95 延迟 (按版本)\",\n      \"type\": \"timeseries\"\n    },\n    {\n      \"datasource\": { \"type\": \"prometheus\", \"uid\": \"prometheus\" },\n      \"fieldConfig\": {\n \
+    \       \"defaults\": {\n          \"color\": { \"mode\": \"palette-classic\" },\n          \"custom\": {\n            \"axisCenteredZero\": false,\n            \"axisColorMode\": \"text\",\n      \
+    \      \"axisPlacement\": \"auto\",\n            \"barAlignment\": 0,\n            \"drawStyle\": \"line\",\n            \"fillOpacity\": 10,\n            \"gradientMode\": \"none\",\n            \"\
+    hideFrom\": { \"legend\": false, \"tooltip\": false, \"viz\": false },\n            \"lineInterpolation\": \"linear\",\n            \"lineWidth\": 1,\n            \"pointSize\": 5,\n            \"scaleDistribution\"\
+    : { \"type\": \"linear\" },\n            \"showPoints\": \"never\",\n            \"spanNulls\": false,\n            \"stacking\": { \"group\": \"A\", \"mode\": \"normal\" },\n            \"thresholdsStyle\"\
+    : { \"mode\": \"off\" }\n          },\n          \"mappings\": [],\n          \"thresholds\": { \"mode\": \"absolute\", \"steps\": [{ \"color\": \"green\", \"value\": null }] },\n          \"unit\"\
+    : \"reqps\"\n        },\n        \"overrides\": []\n      },\n      \"gridPos\": { \"h\": 8, \"w\": 12, \"x\": 12, \"y\": 8 },\n      \"id\": 4,\n      \"options\": {\n        \"legend\": { \"calcs\"\
+    : [], \"displayMode\": \"table\", \"placement\": \"bottom\", \"showLegend\": true },\n        \"tooltip\": { \"mode\": \"multi\", \"sort\": \"desc\" }\n      },\n      \"targets\": [\n        {\n  \
+    \        \"datasource\": { \"type\": \"prometheus\", \"uid\": \"prometheus\" },\n          \"editorMode\": \"code\",\n          \"expr\": \"sum by (status, rollouts_pod_template_hash) (rate(flask_http_request_total{namespace=\\\
+    \"tetris-test\\\", rollouts_pod_template_hash=~\\\"$version\\\"}[1m]))\",\n          \"legendFormat\": \"{{status}} / {{rollouts_pod_template_hash}}\",\n          \"range\": true,\n          \"refId\"\
+    : \"A\"\n        }\n      ],\n      \"title\": \"状态码分布\",\n      \"type\": \"timeseries\"\n    },\n    {\n      \"datasource\": { \"type\": \"prometheus\", \"uid\": \"prometheus\" },\n      \"fieldConfig\"\
+    : {\n        \"defaults\": {\n          \"color\": { \"mode\": \"palette-classic\" },\n          \"custom\": {\n            \"axisCenteredZero\": false,\n            \"axisColorMode\": \"text\",\n \
+    \           \"axisPlacement\": \"auto\",\n            \"barAlignment\": 0,\n            \"drawStyle\": \"line\",\n            \"fillOpacity\": 10,\n            \"gradientMode\": \"none\",\n        \
+    \    \"hideFrom\": { \"legend\": false, \"tooltip\": false, \"viz\": false },\n            \"lineInterpolation\": \"linear\",\n            \"lineWidth\": 1,\n            \"pointSize\": 5,\n        \
+    \    \"scaleDistribution\": { \"type\": \"linear\" },\n            \"showPoints\": \"never\",\n            \"spanNulls\": false,\n            \"stacking\": { \"group\": \"A\", \"mode\": \"none\" },\n\
+    \            \"thresholdsStyle\": { \"mode\": \"off\" }\n          },\n          \"mappings\": [],\n          \"thresholds\": { \"mode\": \"absolute\", \"steps\": [{ \"color\": \"green\", \"value\"\
+    : null }] },\n          \"unit\": \"short\"\n        },\n        \"overrides\": []\n      },\n      \"gridPos\": { \"h\": 8, \"w\": 12, \"x\": 0, \"y\": 16 },\n      \"id\": 5,\n      \"options\": {\n\
+    \        \"legend\": { \"calcs\": [], \"displayMode\": \"table\", \"placement\": \"bottom\", \"showLegend\": true },\n        \"tooltip\": { \"mode\": \"multi\", \"sort\": \"desc\" }\n      },\n   \
+    \   \"targets\": [\n        {\n          \"datasource\": { \"type\": \"prometheus\", \"uid\": \"prometheus\" },\n          \"editorMode\": \"code\",\n          \"expr\": \"sum by (rollouts_pod_template_hash)\
+    \ (rate(flask_http_request_exceptions_total{namespace=\\\"tetris-test\\\", rollouts_pod_template_hash=~\\\"$version\\\"}[2m])) or (0 * sum by (rollouts_pod_template_hash) (rate(flask_http_request_total{namespace=\\\
+    \"tetris-test\\\", rollouts_pod_template_hash=~\\\"$version\\\"}[2m])))\",\n          \"legendFormat\": \"{{rollouts_pod_template_hash}}\",\n          \"range\": true,\n          \"refId\": \"A\"\n\
+    \        }\n      ],\n      \"title\": \"异常计数 (按版本)\",\n      \"type\": \"timeseries\"\n    },\n    {\n      \"datasource\": { \"type\": \"prometheus\", \"uid\": \"prometheus\" },\n      \"fieldConfig\"\
+    : {\n        \"defaults\": {\n          \"color\": { \"mode\": \"palette-classic\" },\n          \"custom\": {\n            \"axisCenteredZero\": false,\n            \"axisColorMode\": \"text\",\n \
+    \           \"axisPlacement\": \"auto\",\n            \"barAlignment\": 0,\n            \"drawStyle\": \"line\",\n            \"fillOpacity\": 10,\n            \"gradientMode\": \"none\",\n        \
+    \    \"hideFrom\": { \"legend\": false, \"tooltip\": false, \"viz\": false },\n            \"lineInterpolation\": \"linear\",\n            \"lineWidth\": 1,\n            \"pointSize\": 5,\n        \
+    \    \"scaleDistribution\": { \"type\": \"linear\" },\n            \"showPoints\": \"never\",\n            \"spanNulls\": false,\n            \"stacking\": { \"group\": \"A\", \"mode\": \"none\" },\n\
+    \            \"thresholdsStyle\": { \"mode\": \"off\" }\n          },\n          \"mappings\": [],\n          \"thresholds\": { \"mode\": \"absolute\", \"steps\": [{ \"color\": \"green\", \"value\"\
+    : null }] },\n          \"unit\": \"bytes\"\n        },\n        \"overrides\": []\n      },\n      \"gridPos\": { \"h\": 8, \"w\": 12, \"x\": 12, \"y\": 16 },\n      \"id\": 6,\n      \"options\":\
+    \ {\n        \"legend\": { \"calcs\": [], \"displayMode\": \"table\", \"placement\": \"bottom\", \"showLegend\": true },\n        \"tooltip\": { \"mode\": \"multi\", \"sort\": \"desc\" }\n      },\n\
+    \      \"targets\": [\n        {\n          \"datasource\": { \"type\": \"prometheus\", \"uid\": \"prometheus\" },\n          \"editorMode\": \"code\",\n          \"expr\": \"process_resident_memory_bytes{namespace=\\\
+    \"tetris-test\\\", rollouts_pod_template_hash=~\\\"$version\\\"}\",\n          \"legendFormat\": \"RSS {{pod}}\",\n          \"range\": true,\n          \"refId\": \"A\"\n        }\n      ],\n     \
+    \ \"title\": \"内存占用\",\n      \"type\": \"timeseries\"\n    },\n    {\n      \"datasource\": { \"type\": \"prometheus\", \"uid\": \"prometheus\" },\n      \"fieldConfig\": {\n        \"defaults\": {\n\
+    \          \"color\": { \"mode\": \"palette-classic\" },\n          \"custom\": {\n            \"axisCenteredZero\": false,\n            \"axisColorMode\": \"text\",\n            \"axisPlacement\":\
+    \ \"auto\",\n            \"barAlignment\": 0,\n            \"drawStyle\": \"line\",\n            \"fillOpacity\": 10,\n            \"gradientMode\": \"none\",\n            \"hideFrom\": { \"legend\"\
+    : false, \"tooltip\": false, \"viz\": false },\n            \"lineInterpolation\": \"linear\",\n            \"lineWidth\": 1,\n            \"pointSize\": 5,\n            \"scaleDistribution\": { \"\
+    type\": \"linear\" },\n            \"showPoints\": \"never\",\n            \"spanNulls\": false,\n            \"stacking\": { \"group\": \"A\", \"mode\": \"none\" },\n            \"thresholdsStyle\"\
+    : { \"mode\": \"off\" }\n          },\n          \"mappings\": [],\n          \"thresholds\": { \"mode\": \"absolute\", \"steps\": [{ \"color\": \"green\", \"value\": null }] },\n          \"unit\"\
+    : \"short\"\n        },\n        \"overrides\": []\n      },\n      \"gridPos\": { \"h\": 8, \"w\": 12, \"x\": 0, \"y\": 24 },\n      \"id\": 7,\n      \"options\": {\n        \"legend\": { \"calcs\"\
+    : [], \"displayMode\": \"table\", \"placement\": \"bottom\", \"showLegend\": true },\n        \"tooltip\": { \"mode\": \"multi\", \"sort\": \"desc\" }\n      },\n      \"targets\": [\n        {\n  \
+    \        \"datasource\": { \"type\": \"prometheus\", \"uid\": \"prometheus\" },\n          \"editorMode\": \"code\",\n          \"expr\": \"rate(process_cpu_seconds_total{namespace=\\\"tetris-test\\\
+    \", rollouts_pod_template_hash=~\\\"$version\\\"}[1m])\",\n          \"legendFormat\": \"CPU {{pod}}\",\n          \"range\": true,\n          \"refId\": \"A\"\n        }\n      ],\n      \"title\"\
+    : \"CPU 使用率 (cores)\",\n      \"type\": \"timeseries\"\n    },\n    {\n      \"datasource\": { \"type\": \"prometheus\", \"uid\": \"prometheus\" },\n      \"fieldConfig\": {\n        \"defaults\": {\n\
+    \          \"color\": { \"mode\": \"thresholds\" },\n          \"mappings\": [\n            {\n              \"options\": {\n                \"0\": { \"color\": \"red\", \"index\": 1, \"text\": \"DOWN\"\
+    \ },\n                \"1\": { \"color\": \"green\", \"index\": 0, \"text\": \"UP\" }\n              },\n              \"type\": \"value\"\n            }\n          ],\n          \"thresholds\": {\n\
+    \            \"mode\": \"absolute\",\n            \"steps\": [\n              { \"color\": \"red\", \"value\": null },\n              { \"color\": \"green\", \"value\": 1 }\n            ]\n        \
+    \  },\n          \"unit\": \"short\"\n        },\n        \"overrides\": []\n      },\n      \"gridPos\": { \"h\": 8, \"w\": 12, \"x\": 12, \"y\": 24 },\n      \"id\": 8,\n      \"options\": {\n   \
+    \     \"colorMode\": \"background\",\n        \"graphMode\": \"none\",\n        \"justifyMode\": \"auto\",\n        \"orientation\": \"auto\",\n        \"reduceOptions\": { \"calcs\": [\"lastNotNull\"\
+    ], \"fields\": \"\", \"values\": false },\n        \"textMode\": \"auto\"\n      },\n      \"targets\": [\n        {\n          \"datasource\": { \"type\": \"prometheus\", \"uid\": \"prometheus\" },\n\
+    \          \"editorMode\": \"code\",\n          \"expr\": \"up{namespace=\\\"tetris-test\\\", rollouts_pod_template_hash=~\\\"$version\\\"}\",\n          \"legendFormat\": \"{{pod}}\",\n          \"\
+    range\": true,\n          \"refId\": \"A\"\n        }\n      ],\n      \"title\": \"Pod 存活 (up)\",\n      \"type\": \"stat\"\n    },\n    {\n      \"datasource\": { \"type\": \"prometheus\", \"uid\"\
+    : \"prometheus\" },\n      \"fieldConfig\": {\n        \"defaults\": {\n          \"color\": { \"mode\": \"palette-classic\" },\n          \"custom\": {\n            \"axisCenteredZero\": false,\n \
+    \           \"axisColorMode\": \"text\",\n            \"axisPlacement\": \"auto\",\n            \"barAlignment\": 0,\n            \"drawStyle\": \"line\",\n            \"fillOpacity\": 10,\n       \
+    \     \"gradientMode\": \"none\",\n            \"hideFrom\": { \"legend\": false, \"tooltip\": false, \"viz\": false },\n            \"lineInterpolation\": \"linear\",\n            \"lineWidth\": 1,\n\
+    \            \"pointSize\": 5,\n            \"scaleDistribution\": { \"type\": \"linear\" },\n            \"showPoints\": \"never\",\n            \"spanNulls\": false,\n            \"stacking\": { \"\
+    group\": \"A\", \"mode\": \"none\" },\n            \"thresholdsStyle\": { \"mode\": \"off\" }\n          },\n          \"mappings\": [],\n          \"thresholds\": { \"mode\": \"absolute\", \"steps\"\
+    : [{ \"color\": \"green\", \"value\": null }] },\n          \"unit\": \"short\"\n        },\n        \"overrides\": []\n      },\n      \"gridPos\": { \"h\": 8, \"w\": 12, \"x\": 0, \"y\": 32 },\n \
+    \     \"id\": 9,\n      \"options\": {\n        \"legend\": { \"calcs\": [], \"displayMode\": \"table\", \"placement\": \"bottom\", \"showLegend\": true },\n        \"tooltip\": { \"mode\": \"multi\"\
+    , \"sort\": \"desc\" }\n      },\n      \"targets\": [\n        {\n          \"datasource\": { \"type\": \"prometheus\", \"uid\": \"prometheus\" },\n          \"editorMode\": \"code\",\n          \"\
+    expr\": \"sum by (rollouts_pod_template_hash) (rate(tetris_errors_total{namespace=\\\"tetris-test\\\", rollouts_pod_template_hash=~\\\"$version\\\"}[2m]))\",\n          \"legendFormat\": \"{{rollouts_pod_template_hash}}\"\
+    ,\n          \"range\": true,\n          \"refId\": \"A\"\n        }\n      ],\n      \"title\": \"业务错误速率 (启动即存在, 无流量也有数据)\",\n      \"type\": \"timeseries\"\n    },\n    {\n      \"datasource\": {\
+    \ \"type\": \"prometheus\", \"uid\": \"prometheus\" },\n      \"fieldConfig\": {\n        \"defaults\": {\n          \"color\": { \"mode\": \"palette-classic\" },\n          \"custom\": {\n        \
+    \    \"axisCenteredZero\": false,\n            \"axisColorMode\": \"text\",\n            \"axisPlacement\": \"auto\",\n            \"barAlignment\": 0,\n            \"drawStyle\": \"line\",\n      \
+    \      \"fillOpacity\": 10,\n            \"gradientMode\": \"none\",\n            \"hideFrom\": { \"legend\": false, \"tooltip\": false, \"viz\": false },\n            \"lineInterpolation\": \"linear\"\
+    ,\n            \"lineWidth\": 1,\n            \"pointSize\": 5,\n            \"scaleDistribution\": { \"type\": \"linear\" },\n            \"showPoints\": \"never\",\n            \"spanNulls\": false,\n\
+    \            \"stacking\": { \"group\": \"A\", \"mode\": \"none\" },\n            \"thresholdsStyle\": { \"mode\": \"off\" }\n          },\n          \"mappings\": [],\n          \"thresholds\": { \"\
+    mode\": \"absolute\", \"steps\": [{ \"color\": \"green\", \"value\": null }] },\n          \"unit\": \"short\"\n        },\n        \"overrides\": []\n      },\n      \"gridPos\": { \"h\": 8, \"w\"\
+    : 12, \"x\": 12, \"y\": 32 },\n      \"id\": 10,\n      \"options\": {\n        \"legend\": { \"calcs\": [], \"displayMode\": \"table\", \"placement\": \"bottom\", \"showLegend\": true },\n        \"\
+    tooltip\": { \"mode\": \"multi\", \"sort\": \"desc\" }\n      },\n      \"targets\": [\n        {\n          \"datasource\": { \"type\": \"prometheus\", \"uid\": \"prometheus\" },\n          \"editorMode\"\
+    : \"code\",\n          \"expr\": \"sum by (rollouts_pod_template_hash) (rate(tetris_game_start_total{namespace=\\\"tetris-test\\\", rollouts_pod_template_hash=~\\\"$version\\\"}[5m]))\",\n         \
+    \ \"legendFormat\": \"开局速率 {{rollouts_pod_template_hash}}\",\n          \"range\": true,\n          \"refId\": \"A\"\n        },\n        {\n          \"datasource\": { \"type\": \"prometheus\", \"\
+    uid\": \"prometheus\" },\n          \"editorMode\": \"code\",\n          \"expr\": \"sum by (rollouts_pod_template_hash) (rate(tetris_game_start_failed_total{namespace=\\\"tetris-test\\\", rollouts_pod_template_hash=~\\\
+    \"$version\\\"}[5m]))\",\n          \"legendFormat\": \"开局失败 {{rollouts_pod_template_hash}}\",\n          \"range\": true,\n          \"refId\": \"B\"\n        }\n      ],\n      \"title\": \"开局速率 /\
+    \ 开局失败 (业务活跃度)\",\n      \"type\": \"timeseries\"\n    },\n    {\n      \"datasource\": { \"type\": \"prometheus\", \"uid\": \"prometheus\" },\n      \"fieldConfig\": {\n        \"defaults\": {\n  \
+    \        \"color\": { \"mode\": \"palette-classic\" },\n          \"custom\": {\n            \"axisCenteredZero\": false,\n            \"axisColorMode\": \"text\",\n            \"axisPlacement\": \"\
+    auto\",\n            \"barAlignment\": 0,\n            \"drawStyle\": \"line\",\n            \"fillOpacity\": 10,\n            \"gradientMode\": \"none\",\n            \"hideFrom\": { \"legend\": false,\
+    \ \"tooltip\": false, \"viz\": false },\n            \"lineInterpolation\": \"linear\",\n            \"lineWidth\": 1,\n            \"pointSize\": 5,\n            \"scaleDistribution\": { \"type\":\
+    \ \"linear\" },\n            \"showPoints\": \"never\",\n            \"spanNulls\": false,\n            \"stacking\": { \"group\": \"A\", \"mode\": \"none\" },\n            \"thresholdsStyle\": { \"\
+    mode\": \"off\" }\n          },\n          \"mappings\": [],\n          \"thresholds\": { \"mode\": \"absolute\", \"steps\": [{ \"color\": \"green\", \"value\": null }] },\n          \"unit\": \"short\"\
+    \n        },\n        \"overrides\": []\n      },\n      \"gridPos\": { \"h\": 8, \"w\": 12, \"x\": 0, \"y\": 40 },\n      \"id\": 11,\n      \"options\": {\n        \"legend\": { \"calcs\": [], \"\
+    displayMode\": \"table\", \"placement\": \"bottom\", \"showLegend\": true },\n        \"tooltip\": { \"mode\": \"multi\", \"sort\": \"desc\" }\n      },\n      \"targets\": [\n        {\n          \"\
+    datasource\": { \"type\": \"prometheus\", \"uid\": \"prometheus\" },\n          \"editorMode\": \"code\",\n          \"expr\": \"tetris_ws_connections{namespace=\\\"tetris-test\\\", rollouts_pod_template_hash=~\\\
+    \"$version\\\"}\",\n          \"legendFormat\": \"WS连接 {{pod}}\",\n          \"range\": true,\n          \"refId\": \"A\"\n        },\n        {\n          \"datasource\": { \"type\": \"prometheus\"\
+    , \"uid\": \"prometheus\" },\n          \"editorMode\": \"code\",\n          \"expr\": \"tetris_players_active{namespace=\\\"tetris-test\\\", rollouts_pod_template_hash=~\\\"$version\\\"}\",\n     \
+    \     \"legendFormat\": \"活跃玩家 {{pod}}\",\n          \"range\": true,\n          \"refId\": \"B\"\n        }\n      ],\n      \"title\": \"在线连接数 / 活跃玩家 (实时)\",\n      \"type\": \"timeseries\"\n    },\n\
+    \    {\n      \"datasource\": { \"type\": \"prometheus\", \"uid\": \"prometheus\" },\n      \"fieldConfig\": {\n        \"defaults\": {\n          \"color\": { \"mode\": \"palette-classic\" },\n   \
+    \       \"custom\": {\n            \"axisCenteredZero\": false,\n            \"axisColorMode\": \"text\",\n            \"axisPlacement\": \"auto\",\n            \"barAlignment\": 0,\n            \"\
+    drawStyle\": \"line\",\n            \"fillOpacity\": 10,\n            \"gradientMode\": \"none\",\n            \"hideFrom\": { \"legend\": false, \"tooltip\": false, \"viz\": false },\n            \"\
+    lineInterpolation\": \"linear\",\n            \"lineWidth\": 1,\n            \"pointSize\": 5,\n            \"scaleDistribution\": { \"type\": \"linear\" },\n            \"showPoints\": \"never\",\n\
+    \            \"spanNulls\": false,\n            \"stacking\": { \"group\": \"A\", \"mode\": \"none\" },\n            \"thresholdsStyle\": { \"mode\": \"off\" }\n          },\n          \"mappings\"\
+    : [],\n          \"thresholds\": { \"mode\": \"absolute\", \"steps\": [{ \"color\": \"green\", \"value\": null }] },\n          \"unit\": \"short\"\n        },\n        \"overrides\": []\n      },\n\
+    \      \"gridPos\": { \"h\": 8, \"w\": 12, \"x\": 12, \"y\": 40 },\n      \"id\": 12,\n      \"options\": {\n        \"legend\": { \"calcs\": [], \"displayMode\": \"table\", \"placement\": \"bottom\"\
+    , \"showLegend\": true },\n        \"tooltip\": { \"mode\": \"multi\", \"sort\": \"desc\" }\n      },\n      \"targets\": [\n        {\n          \"datasource\": { \"type\": \"prometheus\", \"uid\"\
+    : \"prometheus\" },\n          \"editorMode\": \"code\",\n          \"expr\": \"tetris_game_start_total{namespace=\\\"tetris-test\\\", rollouts_pod_template_hash=~\\\"$version\\\"}\",\n          \"\
+    legendFormat\": \"累计开局 {{pod}}\",\n          \"range\": true,\n          \"refId\": \"A\"\n        },\n        {\n          \"datasource\": { \"type\": \"prometheus\", \"uid\": \"prometheus\" },\n \
+    \         \"editorMode\": \"code\",\n          \"expr\": \"tetris_errors_total{namespace=\\\"tetris-test\\\", rollouts_pod_template_hash=~\\\"$version\\\"}\",\n          \"legendFormat\": \"累计错误 {{pod}}\"\
+    ,\n          \"range\": true,\n          \"refId\": \"B\"\n        }\n      ],\n      \"title\": \"累计开局数 / 累计错误数 (重启会归零)\",\n      \"type\": \"timeseries\"\n    }\n  ],\n  \"refresh\": \"30s\",\n  \"\
+    schemaVersion\": 39,\n  \"tags\": [\"tetris\", \"argo-rollouts\", \"canary\"],\n  \"templating\": {\n    \"list\": [\n      {\n        \"current\": { \"selected\": true, \"text\": [\"All\"], \"value\"\
+    : [\"$__all\"] },\n        \"datasource\": { \"type\": \"prometheus\", \"uid\": \"prometheus\" },\n        \"definition\": \"label_values(up{namespace=\\\"tetris-test\\\"}, rollouts_pod_template_hash)\"\
+    ,\n        \"hide\": 0,\n        \"includeAll\": true,\n        \"allValue\": \".*\",\n        \"label\": \"版本(hash)\",\n        \"multi\": true,\n        \"name\": \"version\",\n        \"options\"\
+    : [],\n        \"query\": {\n          \"query\": \"label_values(up{namespace=\\\"tetris-test\\\"}, rollouts_pod_template_hash)\",\n          \"refId\": \"StandardVariableQuery\"\n        },\n     \
+    \   \"refresh\": 2,\n        \"regex\": \"\",\n        \"skipUrlSync\": false,\n        \"sort\": 1,\n        \"type\": \"query\"\n      }\n    ]\n  },\n  \"time\": { \"from\": \"now-3h\", \"to\": \"\
+    now\" },\n  \"timepicker\": {},\n  \"timezone\": \"browser\",\n  \"title\": \"Tetris 应用监控 (金丝雀发布)\",\n  \"uid\": \"tetris-canary\",\n  \"version\": 1,\n  \"weekStart\": \"\"\n}\n"
+kind: ConfigMap
+metadata:
+  labels:
+    grafana_dashboard: '1'
+  name: tetris-app-dashboard
+  namespace: monitoring

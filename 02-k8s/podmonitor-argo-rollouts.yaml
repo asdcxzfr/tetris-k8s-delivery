@@ -1,0 +1,18 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  labels:
+    release: kube-prometheus-stack
+  name: argo-rollouts
+  namespace: default
+spec:
+  namespaceSelector:
+    matchNames:
+    - argo-rollouts
+  podMetricsEndpoints:
+  - interval: 30s
+    path: /metrics
+    port: metrics
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: argo-rollouts

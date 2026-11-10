@@ -1,0 +1,75 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: tetris-game
+  namespace: tetris-test
+spec:
+  analysis:
+    successfulRunHistoryLimit: 3
+    unsuccessfulRunHistoryLimit: 3
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tetris-game
+  strategy:
+    canary:
+      analysis:
+        args:
+        - name: canary-hash
+          valueFrom:
+            podTemplateHashValue: Latest
+        startingStep: 1
+        templates:
+        - templateName: tetris-canary-analysis
+      canaryService: tetris-game-canary
+      stableService: tetris-game-stable
+      steps:
+      - setWeight: 10
+      - pause:
+          duration: 2m
+      - setWeight: 30
+      - pause:
+          duration: 2m
+      - setWeight: 60
+      - pause:
+          duration: 2m
+      - setWeight: 100
+      trafficRouting:
+        nginx:
+          stableIngress: tetris-ingress
+  template:
+    metadata:
+      labels:
+        app: tetris-game
+    spec:
+      containers:
+      - env:
+        - name: DB_HOST
+          value: 192.168.164.131
+        image: harbor.local/tetris-game/tetris-game:test-branch-36
+        name: tetris-game
+        ports:
+        - containerPort: 5000
+          name: http
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 5
+          httpGet:
+            path: /
+            port: http
+          initialDelaySeconds: 2
+          periodSeconds: 3
+          timeoutSeconds: 5
+        resources:
+          limits:
+            memory: 256Mi
+          requests:
+            cpu: 100m
+            memory: 128Mi
+      dnsPolicy: ClusterFirst
+      imagePullSecrets:
+      - name: harbor-pull-secret
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30

@@ -1,0 +1,35 @@
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: AlertmanagerConfig
+metadata:
+  name: tetris-alerts
+  namespace: tetris-test
+spec:
+  receivers:
+  - emailConfigs:
+    - authPassword:
+        key: password
+        name: smtp-secret
+      authUsername: alert-sender@example.com
+      from: alert-sender@example.com
+      requireTLS: true
+      sendResolved: true
+      smarthost: smtp.qq.com:587
+      to: alert-recipient@example.com
+    name: tetris-email
+  route:
+    groupBy:
+    - alertname
+    - namespace
+    groupInterval: 5m
+    groupWait: 30s
+    matchers:
+    - name: app
+      value: tetris-game
+    receiver: tetris-email
+    repeatInterval: 4h
+    routes:
+    - matchers:
+      - name: severity
+        value: critical
+      receiver: tetris-email
+      repeatInterval: 1h

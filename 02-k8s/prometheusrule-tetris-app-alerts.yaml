@@ -1,0 +1,117 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  annotations:
+    prometheus-operator-validated: 'true'
+  labels:
+    release: kube-prometheus-stack
+  name: tetris-app-alerts
+  namespace: monitoring
+spec:
+  groups:
+  - name: tetris-app
+    rules:
+    - alert: TetrisAppDown
+      annotations:
+        description: Prometheus 已连续 1 分钟抓不到 {{ $labels.pod }} ({{ $labels.instance }})
+        summary: tetris 应用实例不可达
+      expr: sum(up{namespace="tetris-test"}) == 0
+      for: 1m
+      labels:
+        app: tetris-game
+        namespace: tetris-test
+        severity: critical
+    - alert: TetrisHighErrorRate
+      annotations:
+        description: 近 5 分钟业务错误速率 {{ $value | printf "%.3f" }} 次/秒 (阈值 0.05)
+        summary: tetris 业务错误速率过高
+      expr: sum(rate(tetris_errors_total{namespace="tetris-test"}[5m])) > 0.05
+      for: 3m
+      labels:
+        app: tetris-game
+        namespace: tetris-test
+        severity: warning
+    - alert: TetrisGameStartFailures
+      annotations:
+        description: 近 10 分钟新增 {{ $value }} 次开局失败
+        summary: tetris 开局失败次数异常
+      expr: increase(tetris_game_start_failed_total{namespace="tetris-test"}[10m]) > 3
+      for: 0m
+      labels:
+        app: tetris-game
+        namespace: tetris-test
+        severity: warning
+    - alert: TetrisRolloutAborted
+      annotations:
+        description: 指标超阈导致 AnalysisRun 失败, Rollout 已自动 abort 并把流量回滚到上一版本, 请查看 AnalysisRun 详情
+        summary: 金丝雀发布被自动回滚 ({{ $labels.name }})
+      expr: increase(rollout_events_total{exported_namespace="tetris-test", reason="RolloutAborted"}[10m]) > 0
+      for: 0m
+      labels:
+        app: tetris-game
+        namespace: tetris-test
+        severity: critical
+    - alert: TetrisAnalysisFailed
+      annotations:
+        description: 近 10 分钟出现 {{ $labels.reason }}; 若是 Error, 通常是指标查询无数据
+        summary: 金丝雀指标分析失败/异常 ({{ $labels.name }})
+      expr: increase(rollout_events_total{exported_namespace="tetris-test", reason=~"AnalysisRunFailed|AnalysisRunError"}[10m]) > 0
+      for: 0m
+      labels:
+        app: tetris-game
+        namespace: tetris-test
+        severity: warning
+    - alert: TetrisRolloutDegraded
+      annotations:
+        description: 已持续 2 分钟; 若已自动回滚, 记得用 kubectl argo rollouts undo 把 spec 也退回去
+        summary: Rollout {{ $labels.name }} 处于 {{ $labels.phase }}
+      expr: rollout_info{exported_namespace="tetris-test", phase="Abort"} == 1
+      for: 2m
+      labels:
+        app: tetris-game
+        namespace: tetris-test
+        severity: critical
+    - alert: TetrisRolloutStuck
+      annotations:
+        description: 已暂停超过 30 分钟, 可能在等人工 promote
+        summary: Rollout {{ $labels.name }} 长时间处于 Paused
+      expr: rollout_info{exported_namespace="tetris-test", phase="Paused"} == 1
+      for: 30m
+      labels:
+        app: tetris-game
+        namespace: tetris-test
+        severity: warning
+    - alert: TetrisContainerMemoryNearLimit
+      annotations:
+        description: Pod {{ $labels.pod }} 内存使用率已达 {{ $value | humanizePercentage }}，limit 为 256Mi。历史上这个 Pod 曾因此被 OOMKilled。
+        summary: tetris-game 容器内存接近 limit
+      expr: "(container_memory_working_set_bytes{namespace=\"tetris-test\", container=\"tetris-game\"}\n  / on(pod, container) kube_pod_container_resource_limits{namespace=\"tetris-test\", container=\"\
+        tetris-game\", resource=\"memory\"}) > 0.85"
+      for: 5m
+      labels:
+        severity: warning
+    - alert: TetrisContainerOOMKilled
+      annotations:
+        description: Pod {{ $labels.pod }} 最近 30 分钟内因 OOMKilled 重启过，说明内存 limit 不足或存在内存泄漏。
+        summary: tetris-game 容器因 OOM 被杀死并重启
+      expr: "kube_pod_container_status_last_terminated_reason{namespace=\"tetris-test\", container=\"tetris-game\", reason=\"OOMKilled\"} == 1\n  and on(pod, container) increase(kube_pod_container_status_restarts_total{namespace=\"\
+        tetris-test\", container=\"tetris-game\"}[30m]) > 0"
+      for: 0m
+      labels:
+        severity: critical
+    - alert: TetrisContainerRestarting
+      annotations:
+        description: Pod {{ $labels.pod }} 15 分钟内重启超过 2 次，请检查 OOM / 探针失败 / 崩溃。
+        summary: tetris-game 容器频繁重启
+      expr: increase(kube_pod_container_status_restarts_total{namespace="tetris-test", container="tetris-game"}[15m]) > 2
+      for: 0m
+      labels:
+        severity: warning
+    - alert: TetrisContainerOOMEvent
+      annotations:
+        description: Pod {{ $labels.pod }} 15 分钟内触发了 cgroup OOM 事件。
+        summary: tetris-game 容器发生 cgroup OOM 事件
+      expr: increase(container_oom_events_total{namespace="tetris-test", container="tetris-game"}[15m]) > 0
+      for: 0m
+      labels:
+        severity: critical

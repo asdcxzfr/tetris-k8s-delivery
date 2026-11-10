@@ -1,0 +1,100 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"argoproj.io/v1alpha1","kind":"AnalysisTemplate","metadata":{"annotations":{},"name":"tetris-canary-analysis","namespace":"tetris-test"},"spec":{"args":[{"name":"canary-hash"}],"metrics":[{"consecutiveErrorLimit":10,"failureCondition":"result[0] \u003e= 0.05","failureLimit":0,"initialDelay":"60s","interval":"1m","name":"business-error-rate","provider":{"prometheus":{"address":"http://kube-prometheus-stack-prometheus.monitoring.svc:9090","query":"sum(rate(tetris_errors_total{namespace=\"tetris-test\",\n    rollouts_pod_template_hash=\"{{args.canary-hash}}\"}[2m])) or vector(0)\n"}}},{"consecutiveErrorLimit":10,"failureCondition":"result[0] \u003e= 0.05","failureLimit":0,"initialDelay":"60s","interval":"1m","name":"http-5xx-rate","provider":{"prometheus":{"address":"http://kube-prometheus-stack-prometheus.monitoring.svc:9090","query":"(sum(rate(flask_http_request_total{namespace=\"tetris-test\",\n     status=~\"5..\", rollouts_pod_template_hash=\"{{args.canary-hash}}\"}[2m]))\n or (0 * sum(rate(flask_http_request_total{namespace=\"tetris-test\",\n     rollouts_pod_template_hash=\"{{args.canary-hash}}\"}[2m]))))\n/\nclamp_min(sum(rate(flask_http_request_total{namespace=\"tetris-test\",\n     rollouts_pod_template_hash=\"{{args.canary-hash}}\"}[2m])), 0.001)\nor vector(0)\n"}}},{"consecutiveErrorLimit":10,"failureCondition":"result[0] \u003e= 0.2","failureLimit":0,"initialDelay":"60s","interval":"1m","name":"game-start-failure-ratio","provider":{"prometheus":{"address":"http://kube-prometheus-stack-prometheus.monitoring.svc:9090","query":"sum(rate(tetris_game_start_failed_total{namespace=\"tetris-test\",\n    rollouts_pod_template_hash=\"{{args.canary-hash}}\"}[5m]))\n/\nclamp_min(sum(rate(tetris_game_start_total{namespace=\"tetris-test\",\n    rollouts_pod_template_hash=\"{{args.canary-hash}}\"}[5m])), 0.001)\nor vector(0)\n"}}},{"consecutiveErrorLimit":3,"failureCondition":"result[0] \u003c 1","failureLimit":1,"initialDelay":"60s","interval":"30s","name":"app-up","provider":{"prometheus":{"address":"http://kube-prometheus-stack-prometheus.monitoring.svc:9090","query":"sum(up{namespace=\"tetris-test\",\n    rollouts_pod_template_hash=\"{{args.canary-hash}}\"}) or vector(0)\n"}}},{"consecutiveErrorLimit":10,"failureCondition":"result[0] \u003e 0.5","failureLimit":1,"initialDelay":"60s","interval":"1m","name":"p95-latency","provider":{"prometheus":{"address":"http://kube-prometheus-stack-prometheus.monitoring.svc:9090","query":"histogram_quantile(0.95,\n  sum(rate(flask_http_request_duration_seconds_bucket{namespace=\"tetris-test\",\n      rollouts_pod_template_hash=\"{{args.canary-hash}}\"}[2m])) by (le))\nor vector(0)\n"}}},{"consecutiveErrorLimit":10,"failureCondition":"result[0] \u003e= 1","failureLimit":1,"initialDelay":"60s","interval":"1m","name":"exceptions","provider":{"prometheus":{"address":"http://kube-prometheus-stack-prometheus.monitoring.svc:9090","query":"sum(rate(flask_http_request_exceptions_total{namespace=\"tetris-test\",\n    rollouts_pod_template_hash=\"{{args.canary-hash}}\"}[2m])) or vector(0)\n"}}}]}}
+  creationTimestamp: "2026-09-15T02:18:02Z"
+  generation: 12
+  name: tetris-canary-analysis
+  namespace: tetris-test
+  resourceVersion: "2577790"
+  uid: d170d831-e0fd-48f7-92df-dcc5864667cd
+spec:
+  args:
+  - name: canary-hash
+  metrics:
+  - consecutiveErrorLimit: 10
+    failureCondition: result[0] >= 0.05
+    failureLimit: 0
+    initialDelay: 60s
+    interval: 1m
+    name: business-error-rate
+    provider:
+      prometheus:
+        address: http://kube-prometheus-stack-prometheus.monitoring.svc:9090
+        query: |
+          sum(rate(tetris_errors_total{namespace="tetris-test",
+              rollouts_pod_template_hash="{{args.canary-hash}}"}[2m])) or vector(0)
+  - consecutiveErrorLimit: 10
+    failureCondition: result[0] >= 0.05
+    failureLimit: 0
+    initialDelay: 60s
+    interval: 1m
+    name: http-5xx-rate
+    provider:
+      prometheus:
+        address: http://kube-prometheus-stack-prometheus.monitoring.svc:9090
+        query: |
+          (sum(rate(flask_http_request_total{namespace="tetris-test",
+               status=~"5..", rollouts_pod_template_hash="{{args.canary-hash}}"}[2m]))
+           or (0 * sum(rate(flask_http_request_total{namespace="tetris-test",
+               rollouts_pod_template_hash="{{args.canary-hash}}"}[2m]))))
+          /
+          clamp_min(sum(rate(flask_http_request_total{namespace="tetris-test",
+               rollouts_pod_template_hash="{{args.canary-hash}}"}[2m])), 0.001)
+          or vector(0)
+  - consecutiveErrorLimit: 10
+    failureCondition: result[0] >= 0.2
+    failureLimit: 0
+    initialDelay: 60s
+    interval: 1m
+    name: game-start-failure-ratio
+    provider:
+      prometheus:
+        address: http://kube-prometheus-stack-prometheus.monitoring.svc:9090
+        query: |
+          sum(rate(tetris_game_start_failed_total{namespace="tetris-test",
+              rollouts_pod_template_hash="{{args.canary-hash}}"}[5m]))
+          /
+          clamp_min(sum(rate(tetris_game_start_total{namespace="tetris-test",
+              rollouts_pod_template_hash="{{args.canary-hash}}"}[5m])), 0.001)
+          or vector(0)
+  - consecutiveErrorLimit: 3
+    failureCondition: result[0] < 1
+    failureLimit: 1
+    initialDelay: 60s
+    interval: 30s
+    name: app-up
+    provider:
+      prometheus:
+        address: http://kube-prometheus-stack-prometheus.monitoring.svc:9090
+        query: |
+          sum(up{namespace="tetris-test",
+              rollouts_pod_template_hash="{{args.canary-hash}}"}) or vector(0)
+  - consecutiveErrorLimit: 10
+    failureCondition: result[0] > 0.5
+    failureLimit: 1
+    initialDelay: 60s
+    interval: 1m
+    name: p95-latency
+    provider:
+      prometheus:
+        address: http://kube-prometheus-stack-prometheus.monitoring.svc:9090
+        query: |
+          histogram_quantile(0.95,
+            sum(rate(flask_http_request_duration_seconds_bucket{namespace="tetris-test",
+                rollouts_pod_template_hash="{{args.canary-hash}}"}[2m])) by (le))
+          or vector(0)
+  - consecutiveErrorLimit: 10
+    failureCondition: result[0] >= 1
+    failureLimit: 1
+    initialDelay: 60s
+    interval: 1m
+    name: exceptions
+    provider:
+      prometheus:
+        address: http://kube-prometheus-stack-prometheus.monitoring.svc:9090
+        query: |
+          sum(rate(flask_http_request_exceptions_total{namespace="tetris-test",
+              rollouts_pod_template_hash="{{args.canary-hash}}"}[2m])) or vector(0)

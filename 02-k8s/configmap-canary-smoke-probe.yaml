@@ -1,0 +1,21 @@
+apiVersion: v1
+data:
+  smoke.py: "\nimport os, sys, threading, time\n\n\ndef _boot():\n    try:\n        import requests  # noqa\n        return 'system'\n    except Exception:\n        pass\n    try:\n        from pip._vendor\
+    \ import requests\n    except Exception:\n        return 'FAILED'\n    sys.modules.setdefault('requests', requests)\n    for n in ('urllib3', 'certifi', 'idna', 'charset_normalizer', 'chardet'):\n \
+    \       try:\n            sys.modules.setdefault(n, __import__('pip._vendor.' + n, fromlist=[n]))\n        except Exception:\n            pass\n    return 'pip-vendored'\n\n\nBOOT = _boot()\ntry:\n\
+    \    import websocket  # noqa\n    WSTRS = [['websocket'], ['polling']]\nexcept Exception:\n    WSTRS = [['polling']]\n\nimport socketio  # noqa\n\nN = int(os.environ.get('N', '10'))\nWAIT = float(os.environ.get('WAIT',\
+    \ '8'))\nREQUIRE = int(os.environ.get('REQUIRE_OK', '0'))\nENTRIES = [e for e in os.environ.get('URLS', '').split(',') if e]\nFAIL_TOTAL = 0\n\n\ndef one(url, out, lock):\n    r = {'connected': False,\
+    \ 'ok': False, 'err': None, 'tr': None}\n    sio = None\n    for tr in WSTRS:\n        started = threading.Event()\n        c = socketio.Client(reconnection=False, request_timeout=15)\n        c.on('game_started',\
+    \ lambda d=None: started.set())\n        try:\n            c.connect(url, transports=tr, wait_timeout=15)\n            sio, r['connected'], r['tr'] = c, True, tr[0]\n            break\n        except\
+    \ Exception as ex:\n            r['err'] = type(ex).__name__\n            try:\n                c.disconnect()\n            except Exception:\n                pass\n    if r['connected']:\n        try:\n\
+    \            sio.emit('start_game')\n            r['ok'] = started.wait(WAIT)\n            if not r['ok']:\n                r['err'] = 'no game_started'\n        except Exception as ex:\n          \
+    \  r['err'] = 'emit:' + type(ex).__name__\n    try:\n        sio.disconnect()\n    except Exception:\n        pass\n    with lock:\n        out.append(r)\n\n\nprint('boot=%s transport=%s N=%d REQUIRE_OK=%d'\
+    \ % (BOOT, WSTRS[0][0], N, REQUIRE), flush=True)\nfor entry in ENTRIES:\n    label, url = (entry.split('=', 1) + [entry])[:2] if '=' in entry else (entry, entry)\n    out, lock = [], threading.Lock()\n\
+    \    ths = [threading.Thread(target=one, args=(url, out, lock)) for _ in range(N)]\n    t0 = time.time()\n    for t in ths:\n        t.start()\n    for t in ths:\n        t.join(timeout=45)\n    ok\
+    \ = sum(1 for r in out if r['ok'])\n    conn = sum(1 for r in out if r['connected'])\n    errs = {}\n    for r in out:\n        if r['err']:\n            errs[r['err']] = errs.get(r['err'], 0) + 1\n\
+    \    verdict = 'PASS'\n    if REQUIRE and ok < REQUIRE:\n        verdict = 'FAIL(需要 %d 个成功开局, 实际 %d)' % (REQUIRE, ok)\n        FAIL_TOTAL += 1\n    print('%s | %s | 连上 %d/%d | 开局成功 %d/%d | %.1fs | errs=%s'\n\
+    \          % (verdict, url, conn, N, ok, N, time.time() - t0, errs), flush=True)\nprint('SMOKE_RESULT %s' % ('FAIL' if FAIL_TOTAL else 'PASS'), flush=True)\nsys.exit(1 if FAIL_TOTAL else 0)\n"
+kind: ConfigMap
+metadata:
+  name: canary-smoke-probe
+  namespace: tetris-test

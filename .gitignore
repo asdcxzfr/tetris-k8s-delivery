@@ -1,0 +1,40 @@
+# ---------- Python ----------
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.coverage
+
+# ---------- 本项目的运行产物 ----------
+*.log
+logs/
+crash-*.txt
+nohup.out
+
+# ---------- 本地凭据 / 密钥（当前仓库没有，但先挡住）----------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+id_rsa*
+id_ed25519*
+*kubeconfig*
+.docker/config.json
+
+# ---------- 编辑器 / 系统 ----------
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---------- 临时文件 ----------
+*.tmp
+*.bak
+*~

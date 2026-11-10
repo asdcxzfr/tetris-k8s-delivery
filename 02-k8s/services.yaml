@@ -1,0 +1,100 @@
+apiVersion: v1
+items:
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+      argo-rollouts.argoproj.io/managed-by-rollouts: tetris-game
+      kubectl.kubernetes.io/last-applied-configuration: '{"apiVersion":"v1","kind":"Service","metadata":{"annotations":{},"name":"tetris-game-stable","namespace":"tetris-test"},"spec":{"ports":[{"port":8080,"targetPort":5000}],"selector":{"app":"tetris-game"}}}
+
+        '
+    creationTimestamp: '2026-09-03T06:16:00Z'
+    name: tetris-game-stable
+    namespace: tetris-test
+    resourceVersion: '4465012'
+    uid: de9c18d2-ba66-407a-9626-36a6aa8edbb2
+  spec:
+    clusterIP: 10.109.203.112
+    clusterIPs:
+    - 10.109.203.112
+    internalTrafficPolicy: Cluster
+    ipFamilies:
+    - IPv4
+    ipFamilyPolicy: SingleStack
+    ports:
+    - port: 8080
+      protocol: TCP
+      targetPort: 5000
+    selector:
+      app: tetris-game
+      rollouts-pod-template-hash: 6fdfc574f6
+    sessionAffinity: None
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+      argo-rollouts.argoproj.io/managed-by-rollouts: tetris-game
+      kubectl.kubernetes.io/last-applied-configuration: '{"apiVersion":"v1","kind":"Service","metadata":{"annotations":{},"name":"tetris-game-canary","namespace":"tetris-test"},"spec":{"ports":[{"port":8080,"targetPort":5000}],"selector":{"app":"tetris-game"}}}
+
+        '
+    creationTimestamp: '2026-09-03T06:18:52Z'
+    name: tetris-game-canary
+    namespace: tetris-test
+    resourceVersion: '4464001'
+    uid: be3b063c-6bcd-458b-be78-cc4cd3db82e2
+  spec:
+    clusterIP: 10.103.72.123
+    clusterIPs:
+    - 10.103.72.123
+    internalTrafficPolicy: Cluster
+    ipFamilies:
+    - IPv4
+    ipFamilyPolicy: SingleStack
+    ports:
+    - port: 8080
+      protocol: TCP
+      targetPort: 5000
+    selector:
+      app: tetris-game
+      rollouts-pod-template-hash: 6fdfc574f6
+    sessionAffinity: None
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: '{"apiVersion":"v1","kind":"Service","metadata":{"annotations":{},"name":"tetris-game-service","namespace":"tetris-test"},"spec":{"ports":[{"port":8080,"targetPort":8080}],"selector":{"app":"tetris-game"},"type":"NodePort"}}
+
+        '
+    creationTimestamp: '2026-08-31T07:10:25Z'
+    name: tetris-game-service
+    namespace: tetris-test
+    resourceVersion: '163943'
+    uid: 5eb23352-a1d7-459f-bf64-10e3b700d411
+  spec:
+    clusterIP: 10.108.27.77
+    clusterIPs:
+    - 10.108.27.77
+    externalTrafficPolicy: Cluster
+    internalTrafficPolicy: Cluster
+    ipFamilies:
+    - IPv4
+    ipFamilyPolicy: SingleStack
+    ports:
+    - nodePort: 32459
+      port: 8080
+      protocol: TCP
+      targetPort: 5000
+    selector:
+      app: tetris-game
+    sessionAffinity: None
+    type: NodePort
+  status:
+    loadBalancer: {}
+kind: List
+metadata: {}

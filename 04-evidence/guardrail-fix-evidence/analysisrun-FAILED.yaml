@@ -1,0 +1,288 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisRun
+metadata:
+  annotations:
+    rollout.argoproj.io/revision: "25"
+  creationTimestamp: "2026-10-12T04:53:04Z"
+  generation: 17
+  labels:
+    app: tetris-game
+    rollout-type: Background
+    rollouts-pod-template-hash: 79776b7bb6
+  name: tetris-game-79776b7bb6-25
+  namespace: tetris-test
+  ownerReferences:
+  - apiVersion: argoproj.io/v1alpha1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Rollout
+    name: tetris-game
+    uid: a808e18c-90a7-4161-ab8e-4586176637f9
+  resourceVersion: "4286591"
+  uid: fd8a9b05-3af7-4c46-9ee7-f59eb1e05702
+spec:
+  args:
+  - name: canary-hash
+    value: 79776b7bb6
+  metrics:
+  - failureCondition: status.failed > 0
+    initialDelay: 60s
+    name: gameplay-smoke
+    provider:
+      job:
+        metadata: {}
+        spec:
+          backoffLimit: 0
+          template:
+            metadata:
+              labels:
+                app: tetris-canary-smoke
+            spec:
+              containers:
+              - args:
+                - |
+                  pip install --quiet --no-index --find-links=/wheels websocket-client >/dev/null 2>&1 || true
+                  python -c "import websocket" 2>/dev/null || python -c "import zipfile,sysconfig,glob; zipfile.ZipFile(glob.glob('/wheels/websocket_client-*.whl')[0]).extractall(sysconfig.get_paths()['purelib'])"
+                  python /scripts/smoke.py
+                command:
+                - sh
+                - -c
+                env:
+                - name: URLS
+                  value: http://tetris-game-canary.tetris-test:8080
+                - name: "N"
+                  value: "10"
+                - name: WAIT
+                  value: "8"
+                - name: REQUIRE_OK
+                  value: "10"
+                image: harbor.local/tetris-game/tetris-game:test-branch-31
+                name: smoke
+                resources: {}
+                volumeMounts:
+                - mountPath: /scripts
+                  name: smoke
+                - mountPath: /wheels
+                  name: wheels
+              imagePullSecrets:
+              - name: harbor-pull-secret
+              nodeSelector:
+                kubernetes.io/hostname: harbor
+              restartPolicy: Never
+              volumes:
+              - configMap:
+                  name: canary-smoke-probe
+                name: smoke
+              - hostPath:
+                  path: /root/loadtest-wheels
+                  type: Directory
+                name: wheels
+    successCondition: status.succeeded > 0
+  - consecutiveErrorLimit: 10
+    failureCondition: result[0] < 1
+    failureLimit: 1
+    initialDelay: 120s
+    interval: 30s
+    name: app-up
+    provider:
+      prometheus:
+        address: http://kube-prometheus-stack-prometheus.monitoring.svc:9090
+        authentication:
+          oauth2: {}
+          sigv4: {}
+        query: |
+          sum(up{namespace="tetris-test",
+              rollouts_pod_template_hash="{{args.canary-hash}}"})
+  - consecutiveErrorLimit: 10
+    failureCondition: result[0] >= 0.05
+    failureLimit: 0
+    initialDelay: 60s
+    interval: 1m
+    name: business-error-rate
+    provider:
+      prometheus:
+        address: http://kube-prometheus-stack-prometheus.monitoring.svc:9090
+        authentication:
+          oauth2: {}
+          sigv4: {}
+        query: |
+          sum(rate(tetris_errors_total{namespace="tetris-test",
+              rollouts_pod_template_hash="{{args.canary-hash}}"}[2m])) or vector(0)
+  - consecutiveErrorLimit: 10
+    failureCondition: result[0] >= 0.2
+    failureLimit: 0
+    initialDelay: 60s
+    interval: 1m
+    name: game-start-failure-ratio
+    provider:
+      prometheus:
+        address: http://kube-prometheus-stack-prometheus.monitoring.svc:9090
+        authentication:
+          oauth2: {}
+          sigv4: {}
+        query: |
+          sum(rate(tetris_game_start_failed_total{namespace="tetris-test",
+              rollouts_pod_template_hash="{{args.canary-hash}}"}[5m]))
+          /
+          clamp_min(sum(rate(tetris_game_start_total{namespace="tetris-test",
+              rollouts_pod_template_hash="{{args.canary-hash}}"}[5m])), 0.001)
+          or vector(0)
+  - consecutiveErrorLimit: 10
+    failureCondition: result[0] >= 0.05
+    failureLimit: 0
+    initialDelay: 60s
+    interval: 1m
+    name: http-5xx-rate
+    provider:
+      prometheus:
+        address: http://kube-prometheus-stack-prometheus.monitoring.svc:9090
+        authentication:
+          oauth2: {}
+          sigv4: {}
+        query: |
+          (sum(rate(flask_http_request_total{namespace="tetris-test",
+               status=~"5..", rollouts_pod_template_hash="{{args.canary-hash}}"}[2m]))
+           or (0 * sum(rate(flask_http_request_total{namespace="tetris-test",
+               rollouts_pod_template_hash="{{args.canary-hash}}"}[2m]))))
+          /
+          clamp_min(sum(rate(flask_http_request_total{namespace="tetris-test",
+               rollouts_pod_template_hash="{{args.canary-hash}}"}[2m])), 0.001)
+          or vector(0)
+  - consecutiveErrorLimit: 10
+    failureCondition: result[0] > 0.5
+    failureLimit: 1
+    initialDelay: 60s
+    interval: 1m
+    name: p95-latency
+    provider:
+      prometheus:
+        address: http://kube-prometheus-stack-prometheus.monitoring.svc:9090
+        authentication:
+          oauth2: {}
+          sigv4: {}
+        query: |
+          histogram_quantile(0.95,
+            sum(rate(flask_http_request_duration_seconds_bucket{namespace="tetris-test",
+                rollouts_pod_template_hash="{{args.canary-hash}}"}[2m])) by (le))
+          or vector(0)
+  - consecutiveErrorLimit: 10
+    failureCondition: result[0] >= 1
+    failureLimit: 1
+    initialDelay: 60s
+    interval: 1m
+    name: exceptions
+    provider:
+      prometheus:
+        address: http://kube-prometheus-stack-prometheus.monitoring.svc:9090
+        authentication:
+          oauth2: {}
+          sigv4: {}
+        query: |
+          sum(rate(flask_http_request_exceptions_total{namespace="tetris-test",
+              rollouts_pod_template_hash="{{args.canary-hash}}"}[2m])) or vector(0)
+status:
+  completedAt: "2026-10-12T04:54:41Z"
+  dryRunSummary: {}
+  message: Metric "gameplay-smoke" assessed Failed due to failed (1) > failureLimit
+    (0)
+  metricResults:
+  - consecutiveSuccess: 1
+    count: 1
+    measurements:
+    - finishedAt: "2026-10-12T04:54:04Z"
+      phase: Successful
+      startedAt: "2026-10-12T04:54:04Z"
+      value: '[0]'
+    metadata:
+      ResolvedPrometheusQuery: |
+        sum(rate(flask_http_request_exceptions_total{namespace="tetris-test",
+            rollouts_pod_template_hash="79776b7bb6"}[2m])) or vector(0)
+    name: exceptions
+    phase: Successful
+    successful: 1
+  - consecutiveSuccess: 1
+    count: 1
+    measurements:
+    - finishedAt: "2026-10-12T04:54:04Z"
+      phase: Successful
+      startedAt: "2026-10-12T04:54:04Z"
+      value: '[0.00475]'
+    metadata:
+      ResolvedPrometheusQuery: |
+        histogram_quantile(0.95,
+          sum(rate(flask_http_request_duration_seconds_bucket{namespace="tetris-test",
+              rollouts_pod_template_hash="79776b7bb6"}[2m])) by (le))
+        or vector(0)
+    name: p95-latency
+    phase: Successful
+    successful: 1
+  - consecutiveSuccess: 1
+    count: 1
+    measurements:
+    - finishedAt: "2026-10-12T04:54:04Z"
+      phase: Successful
+      startedAt: "2026-10-12T04:54:04Z"
+      value: '[0]'
+    metadata:
+      ResolvedPrometheusQuery: |
+        (sum(rate(flask_http_request_total{namespace="tetris-test",
+             status=~"5..", rollouts_pod_template_hash="79776b7bb6"}[2m]))
+         or (0 * sum(rate(flask_http_request_total{namespace="tetris-test",
+             rollouts_pod_template_hash="79776b7bb6"}[2m]))))
+        /
+        clamp_min(sum(rate(flask_http_request_total{namespace="tetris-test",
+             rollouts_pod_template_hash="79776b7bb6"}[2m])), 0.001)
+        or vector(0)
+    name: http-5xx-rate
+    phase: Successful
+    successful: 1
+  - consecutiveSuccess: 1
+    count: 1
+    measurements:
+    - finishedAt: "2026-10-12T04:54:04Z"
+      phase: Successful
+      startedAt: "2026-10-12T04:54:04Z"
+      value: '[0]'
+    metadata:
+      ResolvedPrometheusQuery: |
+        sum(rate(tetris_errors_total{namespace="tetris-test",
+            rollouts_pod_template_hash="79776b7bb6"}[2m])) or vector(0)
+    name: business-error-rate
+    phase: Successful
+    successful: 1
+  - consecutiveSuccess: 1
+    count: 1
+    measurements:
+    - finishedAt: "2026-10-12T04:54:04Z"
+      phase: Successful
+      startedAt: "2026-10-12T04:54:04Z"
+      value: '[0]'
+    metadata:
+      ResolvedPrometheusQuery: |
+        sum(rate(tetris_game_start_failed_total{namespace="tetris-test",
+            rollouts_pod_template_hash="79776b7bb6"}[5m]))
+        /
+        clamp_min(sum(rate(tetris_game_start_total{namespace="tetris-test",
+            rollouts_pod_template_hash="79776b7bb6"}[5m])), 0.001)
+        or vector(0)
+    name: game-start-failure-ratio
+    phase: Successful
+    successful: 1
+  - count: 1
+    failed: 1
+    measurements:
+    - finishedAt: "2026-10-12T04:54:41Z"
+      metadata:
+        job-name: fd8a9b05-3af7-4c46-9ee7-f59eb1e05702.gameplay-smoke.1
+        job-namespace: tetris-test
+      phase: Failed
+      resumeAt: "2026-10-12T04:54:41Z"
+      startedAt: "2026-10-12T04:54:04Z"
+    name: gameplay-smoke
+    phase: Failed
+  phase: Failed
+  runSummary:
+    count: 7
+    failed: 1
+    successful: 5
+  startedAt: "2026-10-12T04:53:04Z"

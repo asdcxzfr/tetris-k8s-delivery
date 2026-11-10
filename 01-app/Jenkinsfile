@@ -1,0 +1,295 @@
+pipeline {
+    agent any
+
+    environment {
+        // 镜像仓库 (需要先在 Jenkins 配置 Credentials, ID 为 harbor-credentials, 见下方说明)
+        HARBOR_HOST = "harbor.local"                 // 只写仓库域名/主机名, 不要带项目路径
+        HARBOR_REGISTRY = "harbor.local/tetris-game" // 域名 + 项目
+        APP_NAME = "tetris-game"
+        CONTAINER_NAME = "tetris-websocket"          // compose 服务对应的容器名
+        COMPOSE_PROJECT = "game"                     // docker-compose 项目名
+
+        K8S_NAMESPACE = "tetris-test"
+        K8S_ROLLOUT    = "tetris-game"   // ★ 是 Rollout(argoproj.io), 不是 Deployment
+        K8S_CONTAINER = "tetris-game"
+    }
+
+    stages {
+        stage('Check Build Type') {
+            steps {
+                script {
+                    echo "========== 构建信息 V5.0 =========="
+                    echo "这是测试自动构建的jenkinsfile  V6.0，带K8S金丝雀(Rollout)"
+                    echo "分支名称: ${env.BRANCH_NAME}"
+                    echo "Tag名称: ${env.TAG_NAME ?: '无'}"
+                    echo "构建号: ${env.BUILD_NUMBER}"
+
+                    // docker tag 只允许 [a-zA-Z0-9_.-], 分支名/标签名里的 '/' 必须替换掉
+                    def safeTag = { raw -> (raw ?: '').replaceAll(/[^a-zA-Z0-9_.-]/, '-') }
+
+                    if (env.TAG_NAME) {
+                        echo "构建类型: 正式版本发布（仅构建+推送，不自动部署）"
+                        env.BUILD_TYPE = "release"
+                        env.IMAGE_TAG = safeTag(env.TAG_NAME)
+                    } else if (env.BRANCH_NAME ==~ /^test-.*/) {
+                        echo "构建类型: 测试分支（构建+推送+金丝雀自动发布）"
+                        env.BUILD_TYPE = "test"
+                        env.IMAGE_TAG = safeTag("${env.BRANCH_NAME}-${env.BUILD_NUMBER}")
+                    } else if (env.BRANCH_NAME == 'main') {
+                        echo "构建类型: 主分支（仅构建，需要Tag才能发布）"
+                        env.BUILD_TYPE = "main-branch"
+                        env.IMAGE_TAG = safeTag("${env.BRANCH_NAME}-${env.BUILD_NUMBER}")
+                        echo "警告: main分支推送不会自动部署，如需发布请打Tag"
+                    } else {
+                        echo "构建类型: 其他分支（仅构建，不部署）"
+                        env.BUILD_TYPE = "other"
+                        env.IMAGE_TAG = safeTag("${env.BRANCH_NAME}-${env.BUILD_NUMBER}")
+                    }
+
+                    echo "使用的镜像Tag: ${env.IMAGE_TAG}"
+                    echo "================================"
+                }
+            }
+        }
+
+        stage('Build Image') {
+            steps {
+                script {
+                    echo "开始构建镜像: ${env.APP_NAME}:${env.IMAGE_TAG}"
+                    sh "docker build -t ${env.APP_NAME}:${env.IMAGE_TAG} ."
+                }
+            }
+        }
+
+        // ========================================================================
+        //  【已停用】下面两个 docker 本地部署阶段被逐行注释掉了 (用 // 而不是 /* */ 注释块,
+        //   因为块注释会被代码里的正则 /Up.*/ 提前终结, 那是 Groovy 的经典坑)
+        //
+        //  原因: 这两个阶段是在 Jenkins 节点上用 docker compose 起容器做"本机验证",
+        //        属于 K8S 之前的旧路径。现在发布链路已是:
+        //        Jenkins 构建 → 推 Harbor → Argo Rollouts 金丝雀(带指标分析 + 自动回滚),
+        //        本机 docker 部署冗余, 且占用 131 的 5000 端口。
+        //
+        //  如需恢复: 把这些行行首的 // 删掉即可。
+        // ========================================================================
+//        stage('Stop and Remove Old Container') {
+//            when { expression { env.BUILD_TYPE == 'test' } }
+//            steps {
+//                script {
+//                    echo "停止旧容器..."
+//                    // 1) compose 按项目停止
+//                    sh "docker compose -p ${COMPOSE_PROJECT} down || true"
+//                    // 2) 兜底: 按容器名强删 (防止旧容器不属于 compose 项目 "game", 导致 rmi 失败/端口冲突)
+//                    sh "docker rm -f \$(docker ps -aq --filter name=${CONTAINER_NAME}) 2>/dev/null || true"
+//
+//                    def currentImage = sh(script: """
+//                        docker ps -a --filter "name=${CONTAINER_NAME}" --format "{{.Image}}" | head -1
+//                    """, returnStdout: true).trim()
+//
+//                    if (currentImage && currentImage != '') {
+//                        def currentTag = currentImage.split(':')[-1]
+//                        echo "当前运行镜像Tag: ${currentTag}"
+//                        if (currentTag != env.IMAGE_TAG) {
+//                            echo "删除旧镜像: ${env.APP_NAME}:${currentTag}"
+//                            sh """
+//                                docker rmi ${env.APP_NAME}:${currentTag} || true
+//                                docker rmi ${HARBOR_REGISTRY}/${env.APP_NAME}:${currentTag} || true
+//                            """
+//                        } else {
+//                            echo "新旧镜像Tag相同，跳过删除"
+//                        }
+//                    } else {
+//                        echo "没有找到运行中的旧容器，跳过清理"
+//                    }
+//
+//                    // 只清理悬空镜像 (不会误删在用镜像)
+//                    sh "docker image prune -f || true"
+//                }
+//            }
+//        }
+//
+//        stage('Run New Container') {
+//            when { expression { env.BUILD_TYPE == 'test' } }
+//            steps {
+//                script {
+//                    echo "启动新容器，使用镜像: ${env.APP_NAME}:${env.IMAGE_TAG}"
+//                    // 注意: docker-compose.yml 里 image 必须写成 ${APP_NAME}:${IMAGE_TAG},
+//                    // 且 APP_NAME / IMAGE_TAG 两个变量都要传给 compose
+//                    withEnv(["APP_NAME=${env.APP_NAME}", "IMAGE_TAG=${env.IMAGE_TAG}"]) {
+//                        sh "docker compose -p ${COMPOSE_PROJECT} up -d --force-recreate"
+//                    }
+//                    sleep 5
+//                    def containerStatus = sh(script: "docker ps --filter 'name=${CONTAINER_NAME}' --format '{{.Status}}'", returnStdout: true).trim()
+//                    echo "容器状态: ${containerStatus}"
+//                    if (containerStatus ==~ /Up.*/) {
+//                        echo "容器启动成功"
+//                    } else {
+//                        // 容器没起来就直接失败, 避免后面把坏镜像推到 Harbor/K8S
+//                        error "容器未正常运行: ${containerStatus}"
+//                    }
+//                }
+//            }
+//        }
+
+        stage('Push to Harbor') {
+            when { expression { env.BUILD_TYPE == 'release' || env.BUILD_TYPE == 'test' } }
+            steps {
+                // 先登录 Harbor (需先在 Jenkins 配置 Username/Password 类型凭证, ID: harbor-credentials)
+                withCredentials([usernamePassword(credentialsId: 'harbor-credentials',
+                                                  usernameVariable: 'HARBOR_USER',
+                                                  passwordVariable: 'HARBOR_TOKEN')]) {
+                    sh "echo \"\${HARBOR_TOKEN}\" | docker login ${HARBOR_HOST} -u \"\${HARBOR_USER}\" --password-stdin"
+                }
+                script {
+                    echo "推送镜像到Harbor..."
+                    sh """
+                        docker tag ${APP_NAME}:${env.IMAGE_TAG} ${HARBOR_REGISTRY}/${APP_NAME}:${env.IMAGE_TAG}
+                        docker push ${HARBOR_REGISTRY}/${APP_NAME}:${env.IMAGE_TAG}
+                    """
+                    if (env.BUILD_TYPE == 'test') {
+                        sh """
+                            docker tag ${APP_NAME}:${env.IMAGE_TAG} ${HARBOR_REGISTRY}/${APP_NAME}:test-latest
+                            docker push ${HARBOR_REGISTRY}/${APP_NAME}:test-latest
+                        """
+                        echo "已推送 test-latest 标签"
+                        sh """
+                            docker images ${HARBOR_REGISTRY}/${APP_NAME} --format "{{.Tag}}" | grep -E '^test-' | sort -r | tail -n +4 | xargs -I {} docker rmi ${HARBOR_REGISTRY}/${APP_NAME}:{} || true
+                            docker images ${APP_NAME} --format "{{.Tag}}" | grep -E '^test-' | sort -r | tail -n +4 | xargs -I {} docker rmi ${APP_NAME}:{} || true
+                        """
+                    }
+                    if (env.BUILD_TYPE == 'release') {
+                        sh """
+                            docker tag ${APP_NAME}:${env.IMAGE_TAG} ${HARBOR_REGISTRY}/${APP_NAME}:prod-latest
+                            docker push ${HARBOR_REGISTRY}/${APP_NAME}:prod-latest
+                        """
+                        echo "已推送 prod-latest 标签"
+                    }
+                    echo "镜像推送完成: ${HARBOR_REGISTRY}/${APP_NAME}:${env.IMAGE_TAG}"
+                }
+            }
+        }
+
+        // ========================================================================
+        //  ★★★ 金丝雀发布: 把新镜像交给 Argo Rollouts ★★★
+        //  - 只改 Rollout 的 image, 之后由 Rollout 自己按 steps 放量:
+        //      10% → pause 2m → 30% → pause 2m → 60% → pause 2m → 100%
+        //  - 背景分析 tetris-canary-analysis 会持续查 Prometheus,
+        //    存活/错误率/延迟超阈 → AnalysisRun Failed → 自动 abort 并把流量回滚到上一版
+        //  - ⚠️ 绝对不要用 kubectl set image deployment/... :
+        //    集群里是 Rollout(CRD), 没有 Deployment; 那样会新建一个同名 Deployment,
+        //    与 Rollout 抢同一批 Pod(selector 相同), 导致服务后端错乱
+        // ========================================================================
+        stage('Deploy Canary to K8S') {
+            when { expression { env.BUILD_TYPE == 'test' } }
+            steps {
+                script {
+                    echo "========== 触发金丝雀发布 =========="
+                    echo "镜像: ${HARBOR_REGISTRY}/${APP_NAME}:${env.IMAGE_TAG}"
+                    echo "目标: ${K8S_NAMESPACE}/rollout/${K8S_ROLLOUT}"
+
+                    // ---- 1) 命名空间 ----
+                    sh "kubectl get namespace ${K8S_NAMESPACE} >/dev/null 2>&1 || kubectl create namespace ${K8S_NAMESPACE}"
+
+                    // ---- 2) Harbor 拉取凭证(幂等重建; Rollout 模板的 imagePullSecrets 依赖它) ----
+                    withCredentials([usernamePassword(credentialsId: 'harbor-credentials',
+                                                      usernameVariable: 'HARBOR_USER',
+                                                      passwordVariable: 'HARBOR_TOKEN')]) {
+                        sh """
+                            kubectl delete secret harbor-pull-secret -n ${K8S_NAMESPACE} 2>/dev/null || true
+                            kubectl create secret docker-registry harbor-pull-secret \\
+                                --docker-server=${HARBOR_HOST} \\
+                                --docker-username=\${HARBOR_USER} \\
+                                --docker-password=\${HARBOR_TOKEN} \\
+                                -n ${K8S_NAMESPACE}
+                        """
+                    }
+
+                    // ---- 3) 前置校验: Rollout 必须存在, 且 containers[0] 就是业务容器 ----
+                    //      (下面的 json patch 按索引定位, 先确认索引正确, 避免打偏)
+                    def rolloutExists = sh(script: "kubectl -n ${K8S_NAMESPACE} get rollout ${K8S_ROLLOUT} >/dev/null 2>&1 && echo yes || echo no",
+                                           returnStdout: true).trim()
+                    if (rolloutExists != 'yes') {
+                        error "Rollout ${K8S_NAMESPACE}/${K8S_ROLLOUT} 不存在, 请先创建(参考 rollout.yaml)"
+                    }
+                    def c0 = sh(script: "kubectl -n ${K8S_NAMESPACE} get rollout ${K8S_ROLLOUT} -o jsonpath='{.spec.template.spec.containers[0].name}'",
+                                returnStdout: true).trim()
+                    if (c0 != "${K8S_CONTAINER}") {
+                        error "Rollout 的 containers[0]='${c0}', 与预期 '${K8S_CONTAINER}' 不符, 已中止(避免 patch 打错容器)"
+                    }
+
+                    // ---- 4) 换镜像 → 触发新的金丝雀 revision ----
+                    //      必须用 --type=json 精确指定路径: Rollout 是 CRD, 没有 strategic-merge
+                    //      元数据, 默认/merge patch 会整体覆盖 containers 列表(丢掉 env/ports)!
+                    sh """
+                        kubectl -n ${K8S_NAMESPACE} patch rollout ${K8S_ROLLOUT} --type=json \\
+                          -p='[{"op":"replace","path":"/spec/template/spec/containers/0/image","value":"${HARBOR_REGISTRY}/${APP_NAME}:${env.IMAGE_TAG}"}]'
+                    """
+
+                    // ---- 5) 打印金丝雀状态 ----
+                    sh """
+                        echo "=== Rollout 状态 ==="
+                        kubectl -n ${K8S_NAMESPACE} get rollout ${K8S_ROLLOUT} \\
+                          -o custom-columns=NAME:.metadata.name,PHASE:.status.phase,CANARY:.status.canary.weights.canary.weight,STABLE:.status.canary.weights.stable.weight
+                        echo ""
+                        echo "=== 最近的 AnalysisRun (指标分析) ==="
+                        kubectl -n ${K8S_NAMESPACE} get analysisrun 2>/dev/null | tail -5 || true
+                        echo ""
+                        echo "=== Pod ==="
+                        kubectl -n ${K8S_NAMESPACE} get pods -l app=${APP_NAME} -o wide
+                    """
+                    echo "金丝雀已触发: 10% → 30% → 60% → 100% (每档 2 分钟; 指标异常会自动回滚)"
+
+                    // ---- 6)【可选】等待金丝雀结果并反映到构建状态 ----
+                    //      默认注释掉(整轮约 6~8 分钟, 会占着 executor)。
+                    //      开启后: 被自动回滚或超时 → 构建标红, 便于第一时间发现。
+                    sh """
+                        PHASE=""
+                        for i in \$(seq 1 40); do
+                          PHASE=\$(kubectl -n ${K8S_NAMESPACE} get rollout ${K8S_ROLLOUT} -o jsonpath='{.status.phase}')
+                          echo "[\${i}/40] rollout phase = \${PHASE}"
+                          case "\${PHASE}" in Healthy|Degraded) break;; esac
+                          sleep 15
+                        done
+                        if [ "\${PHASE}" != "Healthy" ]; then
+                          echo "金丝雀未成功: phase=\${PHASE} (可能已被自动回滚)"
+                          kubectl -n ${K8S_NAMESPACE} get analysisrun | tail -5
+                          exit 1
+                        fi
+                        echo "金丝雀发布成功"
+                    """
+                }
+            }
+        }
+
+        stage('Production Ready Notice') {
+            when { expression { env.BUILD_TYPE == 'release' } }
+            steps {
+                echo """
+                    ========================================
+                    正式版本构建完成！
+                    镜像: ${HARBOR_REGISTRY}/${APP_NAME}:${env.IMAGE_TAG}
+
+                    该版本已推送至镜像仓库，等待人工审核部署。
+                    请相关人员确认后手动部署到生产环境。
+                    ========================================
+                """
+            }
+        }
+    }
+
+    post {
+        always {
+            script {
+                echo "========== 构建完成 =========="
+                echo "构建类型: ${env.BUILD_TYPE ?: '未执行到构建类型判断'}"
+                echo "镜像Tag: ${env.IMAGE_TAG ?: '无'}"
+                echo "构建状态: ${currentBuild.currentResult}"
+                if (env.BUILD_TYPE == 'test') {
+                    echo "提示: Grafana → 'Tetris 应用监控 (金丝雀发布)' 可查看 QPS/错误率/业务指标与版本对比"
+                }
+            }
+        }
+        success { echo "🎉 构建成功！" }
+        failure { echo "❌ 构建失败，请检查日志" }
+    }
+}

@@ -1,0 +1,95 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"monitoring.coreos.com/v1","kind":"PrometheusRule","metadata":{"annotations":{},"labels":{"release":"kube-prometheus-stack"},"name":"tetris-app-alerts","namespace":"monitoring"},"spec":{"groups":[{"name":"tetris-app","rules":[{"alert":"TetrisAppDown","annotations":{"description":"Prometheus 已连续 1 分钟抓不到 {{ $labels.pod }} ({{ $labels.instance }})","summary":"tetris 应用实例不可达"},"expr":"up{namespace=\"tetris-test\"} == 0","for":"1m","labels":{"app":"tetris-game","namespace":"tetris-test","severity":"critical"}},{"alert":"TetrisHighErrorRate","annotations":{"description":"近 5 分钟业务错误速率 {{ $value | printf \"%.3f\" }} 次/秒 (阈值 0.05)","summary":"tetris 业务错误速率过高"},"expr":"sum(rate(tetris_errors_total{namespace=\"tetris-test\"}[5m])) \u003e 0.05","for":"3m","labels":{"app":"tetris-game","namespace":"tetris-test","severity":"warning"}},{"alert":"TetrisGameStartFailures","annotations":{"description":"近 10 分钟新增 {{ $value }} 次开局失败","summary":"tetris 开局失败次数异常"},"expr":"increase(tetris_game_start_failed_total{namespace=\"tetris-test\"}[10m]) \u003e 3","for":"0m","labels":{"app":"tetris-game","namespace":"tetris-test","severity":"warning"}},{"alert":"TetrisRolloutAborted","annotations":{"description":"指标超阈导致 AnalysisRun 失败, Rollout 已自动 abort 并把流量回滚到上一版本, 请查看 AnalysisRun 详情","summary":"金丝雀发布被自动回滚 ({{ $labels.name }})"},"expr":"increase(rollout_events_total{exported_namespace=\"tetris-test\", reason=\"RolloutAborted\"}[10m]) \u003e 0","for":"0m","labels":{"app":"tetris-game","namespace":"tetris-test","severity":"critical"}},{"alert":"TetrisAnalysisFailed","annotations":{"description":"近 10 分钟出现 {{ $labels.reason }}; 若是 Error, 通常是指标查询无数据","summary":"金丝雀指标分析失败/异常 ({{ $labels.name }})"},"expr":"increase(rollout_events_total{exported_namespace=\"tetris-test\", reason=~\"AnalysisRunFailed|AnalysisRunError\"}[10m]) \u003e 0","for":"0m","labels":{"app":"tetris-game","namespace":"tetris-test","severity":"warning"}},{"alert":"TetrisRolloutDegraded","annotations":{"description":"已持续 2 分钟; 若已自动回滚, 记得用 kubectl argo rollouts undo 把 spec 也退回去","summary":"Rollout {{ $labels.name }} 处于 {{ $labels.phase }}"},"expr":"rollout_info{exported_namespace=\"tetris-test\", phase=~\"Degraded|Aborted\"} == 1","for":"2m","labels":{"app":"tetris-game","namespace":"tetris-test","severity":"critical"}},{"alert":"TetrisRolloutStuck","annotations":{"description":"已暂停超过 30 分钟, 可能在等人工 promote","summary":"Rollout {{ $labels.name }} 长时间处于 Paused"},"expr":"rollout_info{exported_namespace=\"tetris-test\", phase=\"Paused\"} == 1","for":"30m","labels":{"app":"tetris-game","namespace":"tetris-test","severity":"warning"}}]}]}}
+    prometheus-operator-validated: "true"
+  creationTimestamp: "2026-09-17T02:40:47Z"
+  generation: 3
+  labels:
+    release: kube-prometheus-stack
+  name: tetris-app-alerts
+  namespace: monitoring
+  resourceVersion: "2091400"
+  uid: 695ffbdd-7dc7-4631-9628-1d3a97e0d71e
+spec:
+  groups:
+  - name: tetris-app
+    rules:
+    - alert: TetrisAppDown
+      annotations:
+        description: Prometheus 已连续 1 分钟抓不到 {{ $labels.pod }} ({{ $labels.instance
+          }})
+        summary: tetris 应用实例不可达
+      expr: up{namespace="tetris-test"} == 0
+      for: 1m
+      labels:
+        app: tetris-game
+        namespace: tetris-test
+        severity: critical
+    - alert: TetrisHighErrorRate
+      annotations:
+        description: 近 5 分钟业务错误速率 {{ $value | printf "%.3f" }} 次/秒 (阈值 0.05)
+        summary: tetris 业务错误速率过高
+      expr: sum(rate(tetris_errors_total{namespace="tetris-test"}[5m])) > 0.05
+      for: 3m
+      labels:
+        app: tetris-game
+        namespace: tetris-test
+        severity: warning
+    - alert: TetrisGameStartFailures
+      annotations:
+        description: 近 10 分钟新增 {{ $value }} 次开局失败
+        summary: tetris 开局失败次数异常
+      expr: increase(tetris_game_start_failed_total{namespace="tetris-test"}[10m])
+        > 3
+      for: 0m
+      labels:
+        app: tetris-game
+        namespace: tetris-test
+        severity: warning
+    - alert: TetrisRolloutAborted
+      annotations:
+        description: 指标超阈导致 AnalysisRun 失败, Rollout 已自动 abort 并把流量回滚到上一版本, 请查看 AnalysisRun
+          详情
+        summary: 金丝雀发布被自动回滚 ({{ $labels.name }})
+      expr: increase(rollout_events_total{exported_namespace="tetris-test", reason="RolloutAborted"}[10m])
+        > 0
+      for: 0m
+      labels:
+        app: tetris-game
+        namespace: tetris-test
+        severity: critical
+    - alert: TetrisAnalysisFailed
+      annotations:
+        description: 近 10 分钟出现 {{ $labels.reason }}; 若是 Error, 通常是指标查询无数据
+        summary: 金丝雀指标分析失败/异常 ({{ $labels.name }})
+      expr: increase(rollout_events_total{exported_namespace="tetris-test", reason=~"AnalysisRunFailed|AnalysisRunError"}[10m])
+        > 0
+      for: 0m
+      labels:
+        app: tetris-game
+        namespace: tetris-test
+        severity: warning
+    - alert: TetrisRolloutDegraded
+      annotations:
+        description: 已持续 2 分钟; 若已自动回滚, 记得用 kubectl argo rollouts undo 把 spec 也退回去
+        summary: Rollout {{ $labels.name }} 处于 {{ $labels.phase }}
+      expr: rollout_info{exported_namespace="tetris-test", phase=~"Degraded|Aborted"}
+        == 1
+      for: 2m
+      labels:
+        app: tetris-game
+        namespace: tetris-test
+        severity: critical
+    - alert: TetrisRolloutStuck
+      annotations:
+        description: 已暂停超过 30 分钟, 可能在等人工 promote
+        summary: Rollout {{ $labels.name }} 长时间处于 Paused
+      expr: rollout_info{exported_namespace="tetris-test", phase="Paused"} == 1
+      for: 30m
+      labels:
+        app: tetris-game
+        namespace: tetris-test
+        severity: warning
