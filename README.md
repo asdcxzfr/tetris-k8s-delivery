@@ -28,13 +28,6 @@
 
 > **说明 / Disclaimer**：本项目为个人 k8s 实验环境项目，仓库内的内网 IP（192.168.164.x）、主机名（harbor.local / tetris.local）与域名均属实验拓扑，不含生产凭据；数据库口令与邮件账号已改为环境变量 / 占位符。
 
-> 生成时间: 2026-10-13 (UTC)
-> 生成方式: **k8s 对象一律从集群实时导出**，不是磁盘上遗留的清单文件
-> 集群: k8s v1.28.15 / 4 节点 (k8s-master .133, jenkins .131, harbor .132, gitlab .130)
-> 源码版本: git `test-branch` @ **e9142b7**
-> 线上镜像: `harbor.local/tetris-game/tetris-game:test-branch-36`
-> Rollout 状态: `Healthy`  stable = current = `6fdfc574f6`
-
 ---
 
 ## ⚠️ 先读这一条
@@ -269,3 +262,14 @@ done
 - `analysistemplate-*.yaml`：**7 条指标**（`gameplay-smoke` 为 job provider，其余 6 条 prometheus）
 - `prometheusrule-*.yaml`：**11 条告警**（`TetrisAppDown` 已是 `sum(up{...}) == 0`；`TetrisRolloutDegraded` 已是 `phase="Abort"`）
 - `podmonitor-argo-rollouts.yaml`：`namespaceSelector.matchNames: [argo-rollouts]`
+
+---
+
+## 交付信息
+
+> 生成时间: 2026-10-13 (UTC)
+> 生成方式: **k8s 对象一律从集群实时导出**，不是磁盘上遗留的清单文件
+> 集群: k8s v1.28.15 / 4 节点 (k8s-master .133, jenkins .131, harbor .132, gitlab .130)
+> 源码版本: git `test-branch` @ **e9142b7**
+> 线上镜像: `harbor.local/tetris-game/tetris-game:test-branch-36`
+> Rollout 状态: `Healthy`  stable = current = `6fdfc574f6`

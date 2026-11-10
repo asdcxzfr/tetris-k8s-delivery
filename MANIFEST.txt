@@ -32,15 +32,13 @@
 ./03-test/loadtest.py                                               25587  7211de5b8c0f
 ./03-test/probe.py                                                   2434  89f239fd69fc
 ./03-test/selfheal-test.sh                                           4389  420efb395d4e
-./03-test/selfheal-test.sh.broken                                    2910  0be9664ae145
 ./03-test/smoke.py                                                   2937  d2069442313b
 ./04-evidence/guardrail-fix-evidence/analysisrun-BEFORE-Successful.yaml    11905  cb5de3aa8293
 ./04-evidence/guardrail-fix-evidence/analysisrun-FAILED.yaml         9475  1c699a964062
 ./04-evidence/guardrail-fix-evidence/analysistemplate-v2.yaml        9718  4d3991b23095
 ./04-evidence/guardrail-fix-evidence/events.txt                      1830  f22b09d26797
 ./05-backups/at-backup-20261012-125012.yaml                          6643  cb503665c040
-./05-backups/at-backup-20261012-125148.yaml                          6643  cb503665c040
 ./05-backups/tetris-app-alerts-backup-20261013-095945.yaml           6368  d58ef4110b39
 ./05-backups/tetris-app-alerts-backup-before-appdown-103639.yaml     8328  2d6ebbdd7727
 ./99-tools/export-clean.py                                           2130  2357e505ec65
-./README.md                                                         15613  7dfca5052c43
+./README.md                                                         15635  ce22f2237ace
