@@ -57,7 +57,8 @@
 ├── 02-k8s/                  集群生效对象的权威快照 (可直接 apply)
 ├── 03-test/                 测试与验证脚本
 ├── 04-evidence/             验证证据 (金丝雀护栏修复前后对照)
-└── 05-backups/              变更前的备份 (可回滚)
+├── 05-backups/              变更前的备份 (可回滚)
+└── docs/                    踩坑复盘: incidents/ 12 篇 + raw/ 原始素材说明
 ```
 
 ---
@@ -204,6 +205,29 @@ kubectl apply -f 02-k8s/rollout.yaml
 5. **长连接（websocket）× HPA**：扩容只对新连接有效，已连接用户不受益。
 6. **Harbor robot 有有效期**，静默过期会让流水线在 `docker login` 阶段莫名失败；建议统一 `duration=-1` 或加到运维备忘。
 
+
+---
+
+## 踩坑复盘（docs/incidents/）
+
+12 篇从真实运行中提炼的故障复盘，统一为「现象 → 排查 → 根因 → 修复 → 验证 → 教训」结构，索引见 [`docs/incidents/README.md`](docs/incidents/README.md)。
+
+| # | 篇目 | 一句话结论 |
+|---|---|---|
+| 01 | [控制平面"自毁循环"](docs/incidents/01-mirror-pod-config-seen.md) | mirror pod 与 static manifest 的 `config.seen` 错位，对账每 ~5.5 分钟杀一次 apiserver |
+| 02 | [护栏假绿](docs/incidents/02-guardrail-blind-spots.md) | 7 条回滚指标里 6 条对坏版本全绿，唯一生效的是冒烟探针 |
+| 03 | [5Gi 抢走 10Gi](docs/incidents/03-pvc-wrong-binding.md) | `storageClassName` 留空 = 在无 class 的 PV 池里按名字字母序抽签 |
+| 04 | [`exported_namespace`](docs/incidents/04-exported-namespace.md) | 不是标签丢了，是 target 标签赢了并给它改名 |
+| 05 | [`or vector(0)`](docs/incidents/05-or-vector-zero.md) | 告警里防沉默，护栏里放水——把"没数据"变成"数据是 0" |
+| 06 | [counter 的两个反向坑](docs/incidents/06-counter-increase-window.md) | `counter > 0`：重启归零漏报，abort 一次永久误报 |
+| 07 | [`rollout_info` 词表](docs/incidents/07-rollout-info-phase.md) | 指标侧 `Abort`、对象侧 `Degraded`，写成 `Aborted` 永不触发 |
+| 08 | [abort ≠ 回滚](docs/incidents/08-abort-is-not-rollback.md) | abort 只停流量与流程，`spec.template` 里的新镜像还在 |
+| 09 | [告警的三种静默失败](docs/incidents/09-alertmanager-silent-failure.md) | 命名空间/severity/根路由错一处，告警就安静掉进黑洞 |
+| 10 | [直方图的三个陷阱](docs/incidents/10-histogram-buckets.md) | 桶累积、`irate` 会漏、`NaN` 在 `>` 与 `<` 两侧含义相反 |
+| 11 | [`N` 变成 `false`](docs/incidents/11-yaml-boolean-norway.md) | PyYAML 不给 `N` 加引号，go-yaml 读成布尔 |
+| 12 | [PID 1 收不到 SIGTERM](docs/incidents/12-pid1-signals.md) | 内核不给 PID 1 默认信号处置，`kill -9 1` 返回成功但无效 |
+
+原始 Word 记录（17 MB / 279 张截图）含未脱敏口令与邮箱，未入库；处理方式见 [`docs/raw/README.md`](docs/raw/README.md)。
 
 ---
 
