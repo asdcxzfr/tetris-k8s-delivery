@@ -150,7 +150,7 @@ kubectl apply -f 02-k8s/rollout.yaml
 
 ---
 
-## 本轮改动记录
+## 改动记录
 
 ### 已完成
 
@@ -170,6 +170,7 @@ kubectl apply -f 02-k8s/rollout.yaml
 ### 已知未修（有意保留）
 
 **代码层**（需出新镜像）
+- 开发代码完全由AI代写，本人无代码开发经验。
 - `get_statistics()` 4 条查询含 2 次全表 `.all()`（空闲时 P50 已 112ms）
 - `create_player` 的全局锁跨 DB 查询
 - `remove_player` 的 `active_players -= 1` 位于 3 段无保护 DB 写之后
@@ -177,7 +178,7 @@ kubectl apply -f 02-k8s/rollout.yaml
 - `GAME_OVER.inc()` 从不自增（死指标）
 - `app.py` 里 5 个 handler 重复注册（`move_down`/`move_left`/`rotate` 各 2 次）
 
-**资源配额**（按用户决定不改动）
+**资源配额**（暂不改动）
 - `limits.memory=256Mi`（实测峰值 251–253Mi → 曾 OOMKilled）
 - `requests.cpu=100m`（实测峰值 1380m）→ HPA `averageUtilization:50` 形同虚设
 - HPA 只按 CPU、不看内存；`maxReplicas=3`（容量上限约 60 玩家）
@@ -264,12 +265,3 @@ done
 - `podmonitor-argo-rollouts.yaml`：`namespaceSelector.matchNames: [argo-rollouts]`
 
 ---
-
-## 交付信息
-
-> 生成时间: 2026-10-13 (UTC)
-> 生成方式: **k8s 对象一律从集群实时导出**，不是磁盘上遗留的清单文件
-> 集群: k8s v1.28.15 / 4 节点 (k8s-master .133, jenkins .131, harbor .132, gitlab .130)
-> 源码版本: git `test-branch` @ **e9142b7**
-> 线上镜像: `harbor.local/tetris-game/tetris-game:test-branch-36`
-> Rollout 状态: `Healthy`  stable = current = `6fdfc574f6`
