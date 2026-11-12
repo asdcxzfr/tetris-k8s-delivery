@@ -1,6 +1,6 @@
-# 03 一块 5Gi 的 PVC 抢走了 10Gi 的 logs 卷：storageClassName 为空时的抢座位规则
+# 03 一块 5Gi 的 PVC 抢走了 10Gi 的 logs 卷：storageClassName 为空时的抢位规则
 
-> **一句话**：`storageClassName` 留空不等于"不动它"，等于"把自己扔进所有无 class PV 的公共池里，能抢到哪个由字母序决定"。chart 里 value 路径写错一个层级，redis 的 5Gi 申请就会绑到 gitlab-logs-pv 上，然后整条链路连带崩。
+> **一句话**：`storageClassName` 留空不等于不分配，等于把PVC扔进所有无 class PV 的公共池里，能抢到哪个由字母序决定。chart 里 value 路径写错一个层级，redis 的 5Gi 申请就会绑到 gitlab-logs-pv 上，然后整条链路崩坏。
 
 **领域**：存储 / Helm chart · **难度**：★★★★☆ · **状态**：已修复（改用 dynamic provisioner）
 
@@ -15,12 +15,12 @@
 
 ## 排查
 
-按"PVC 说的 vs PV 有的"做四步对照：
+对比PVC匹配和现有的PV，做四步对照：
 
 ```bash
 # 1. PVC 到底有没有 class
 kubectl describe pvc redis-data-gitlab-redis-master-0 -n gitlab-system
-#   StorageClass: <空>          ← 关键线索
+#   StorageClass: <空>          （关键）
 #   Events: "no storage class is set"
 
 # 2. 有没有 class 这一栏，直接用列视图横向比
@@ -28,7 +28,7 @@ kubectl get pvc -n gitlab-system -o custom-columns=NAME:.metadata.name,SC:.spec.
 kubectl get pv  -o custom-columns=NAME:.metadata.name,SIZE:.spec.capacity.storage,SC:.spec.storageClassName,STATUS:.status.phase
 ```
 
-判读规则（本次三种情况全中）：
+判读规则：
 
 | PVC 状态 | 含义 |
 |---|---|
@@ -45,7 +45,7 @@ kubectl get pv  -o custom-columns=NAME:.metadata.name,SIZE:.spec.capacity.storag
    ```yaml
    persistence:
      redis:
-       storageClass: gitlab-redis     # ← 我们以为 chart 读这里
+       storageClass: gitlab-redis     # ← 原以为 chart 读这里
    ```
 
    但 chart 9.10.8 的 redis 是 subchart，实际读的是：
@@ -57,13 +57,13 @@ kubectl get pv  -o custom-columns=NAME:.metadata.name,SIZE:.spec.capacity.storag
          storageClassName: gitlab-redis   # ← chart 真正读这里
    ```
 
-   umbrella chart 不把 subchart 的 values 暴露到顶层，于是传了个寂寞，PVC 的 `storageClassName` 是**空**。
+   umbrella chart 不把 subchart 的 values 暴露到顶层，传了等于没传，PVC 的 `storageClassName` 是**空**。
 
-2. **空 class 触发 fallback**。k8s 的绑定器此时不看"你想要谁"，而是去匹配**所有 `storageClassName` 为空的 Available PV**。
+2. **空 class 触发 fallback**。k8s 的绑定器此时只根据字母序去匹配**所有 `storageClassName` 为空的 Available PV**。
 
-3. **抢座位规则是字母序**。候选池里有 `gitlab-logs-pv`(10Gi)、`gitlab-data-pv`(10Gi)、`gitlab-config-pv`(5Gi)、`gitlab-minio-pv`(10Gi)；redis 要 5Gi。字母序 `logs < data < minio`，于是 5Gi 申请绑走了 10Gi 的 logs 卷——size 更大不影响，只要满足。
+3. **抢位规则是字母序**。候选池里有 `gitlab-logs-pv`(10Gi)、`gitlab-data-pv`(10Gi)、`gitlab-config-pv`(5Gi)、`gitlab-minio-pv`(10Gi)；redis 要 5Gi。字母序 `logs < data < minio`，于是 5Gi 申请绑走了 10Gi 的 logs 卷，size 不影响抢位，只要满足。
 
-一个组件抢错只是开始：它占掉卷之后，下一个组件继续去抢下一个字母序的候选，**整个集群的 PV 分配集体错位**。
+一个组件抢错只是开始：它占掉卷之后，下一个组件继续去抢下一个字母序的候选，**导致整个集群的 PV 分配集体错位**。
 
 ## 修复
 
@@ -92,8 +92,6 @@ kubectl delete gitlab gitlab -n gitlab-system && kubectl apply -f /mnt/gitlab/gi
 2. **`volumeBindingMode: WaitForFirstConsumer`**——PVC 与 Pod 都就绪后才绑，保证 PV 的本地目录和 Pod 在同一个节点；`Immediate` 模式下 local PV 会绑到任意节点导致 Pod 无处可调度。
 3. **手写 PV 要清干净**，遗留的 Available PV 永远是抢绑的候选。
 
-顺带修掉的第二处：`postgresql.enabled: false` 不生效——同样是因为 subchart 的开关不在 umbrella 顶层。关不掉就改成**外部 postgres/redis**，这也是本项目最终采用的形态。
-
 ## 验证
 
 ```bash
@@ -104,6 +102,6 @@ kubectl get pods -n local-path-storage    # provisioner Running
 
 ## 教训
 
-1. **`storageClassName` 为空是一条无声的默认通路**，不是"没配置"。任何 chart 调参后都要回查 PVC 里 class 是否真的落地：`-o jsonpath='{.spec.storageClassName}'`。
-2. **subchart 的 value 路径不可猜**：`helm show values` 或 `helm template` 出来的渲染结果才是唯一事实，顶层写 `persistence.X` 很可能只是写给自己看的。
-3. **"全部 Bound"不等于"绑对了"**。批量检查要看 `volumeName` 与期望的对应关系，别只看 STATUS 列。
+1. **`storageClassName` 为空不等于随机分配**。任何 chart 调参后都要回查 PVC 里 class 是否真的落地：`-o jsonpath='{.spec.storageClassName}'`。
+2. **subchart 的 value 路径不可猜**：`helm show values` 或 `helm template` 出来的渲染结果才是唯一事实。
+3. **"全部 Bound"不等于"绑对了"**。批量检查要看 `volumeName` 与期望的对应关系，不能只看 STATUS 列。

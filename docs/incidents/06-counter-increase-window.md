@@ -1,6 +1,6 @@
 # 06 counter 的两个反向坑：重启归零导致漏报，abort 一次导致永久误报
 
-> **一句话**：counter 的绝对值永远没有语义。`> 0` 这种写法在 counter 上同时踩两个坑——进程重启把它抹成 0（漏报），发生过一次它就再也不会回到 0（永久误报）。唯一正确的问法是"最近 N 分钟有没有新增"。
+> **一句话**：counter 的绝对值永远没有语义。`> 0` 这种写法在 counter 上同时踩两个坑——进程重启把它抹成 0（漏报），发生过一次它就再也不会回到 0（永久误报）。唯一正确的写法是"最近 N 分钟有没有新增"。
 
 **领域**：PromQL / 告警正确性 · **难度**：★★★☆☆ · **状态**：已修复（残余一处已记录）
 
@@ -14,7 +14,7 @@ rollout_events_total{reason="RolloutAborted"} > 0
 
 两种相反的错法先后出现：
 
-1. **abort 过一次之后，这条告警永远 firing**——即使后来又发布了十次、全部健康
+1. **abort 过一次之后，这条告警永远 firing**：即使后来又发布了十次、全部健康，依旧会发送报警
 2. 控制器 Pod 重启（发版频繁，控制器跟着滚动）后计数归零，**那一次的 abort 反而没报**
 
 ## 排查
@@ -27,21 +27,21 @@ curl -sG 'http://127.0.0.1:19090/api/v1/labels' \
      --data-urlencode 'match[]=rollout_events_total' | python3 -m json.tool
 ```
 
-实测标签：`name="tetris-game"`、`reason=...`、`type=...`、`exported_namespace="tetris-test"`（见 04）。
+标签：`name="tetris-game"`、`reason=...`、`type=...`、`exported_namespace="tetris-test"`。
 
-关键发现：正常状态下，这个指标**只有** `reason="RolloutAddedToInformer"`（控制器启动事件），查询 `reason="RolloutAborted"` 返回 **EMPTY**——也就是说，绝大多数时间它根本不存在，而"不存在"和"值为 0"在 `> 0` 里表现一致。
+关键发现：正常状态下，这个指标**只有** `reason="RolloutAddedToInformer"`（控制器启动事件），查询 `reason="RolloutAborted"` 返回 **EMPTY**，即绝大多数时间它根本不存在，而"不存在"和"值为 0"在 `> 0` 里表现一致。
 
 ## 根因
 
 counter 的语义是"自进程启动以来的累计增量"：
 
-- **单调递增**：一旦 abort 过一次，值 ≥ 1，之后新版本发布成功也不会让它回到 0 → 永久误报
-- **随进程重启归零**：控制器滚动重启后从 0 重新计数 → 如果只看"当前值 > 0"，重启后的第一次事件可能刚好落在两次抓取之间 → 漏报
-- 更细的一层（已记录、未修）：新 series **首次出现即值 1**，没有 0 基准，`increase()` 对"从无到有"的第一段增长计算会打折
+- **单调递增**：一旦 abort 过一次，值 ≥ 1，之后新版本发布成功也不会让它回到 0，导致永久误报
+- **随进程重启归零**：控制器滚动重启后从 0 重新计数 → 如果只看"当前值 > 0"，重启后的第一次事件可能刚好落在两次抓取之间导致漏报
+- 更细的一层（已记录）：新 series **首次出现即值 1**，没有 0 基准，`increase()` 对"从无到有"的第一段增长计算会打折
 
 ## 修复
 
-把"是否发生过"改写成"窗口内有没有新增"：
+把"是否发生过"改写成"在某段时间内有没有新增"：
 
 ```yaml
 - alert: TetrisRolloutAborted
@@ -57,11 +57,11 @@ counter 的语义是"自进程启动以来的累计增量"：
 expr: increase(rollout_events_total{exported_namespace="tetris-test", reason=~"AnalysisRunFailed|AnalysisRunError"}[10m]) > 0
 ```
 
-注意 `=~` 是**完全锚定**的正则（`^(?:AnalysisRunFailed|AnalysisRunError)$`），不会误伤 `AnalysisRunFailed2` 之类的相近值。
+注意 `=~` 是**完全锚定**的正则（`^(?:AnalysisRunFailed|AnalysisRunError)$`），不会误报 `AnalysisRunFailed2` 之类的相近值。
 
-## 残余问题（已记录，未修）
+## 残余问题（已记录）
 
-`rollout_events_total` 的 series 首次出现即 1，无 0 基准，所以控制器重启后的第一次事件仍可能漏掉。决策是**保留现状**，把 abort 检测的主力交给 `TetrisRolloutDegraded`（查 `rollout_info` 的 phase，是 gauge，见 07），事件型告警只作为补充。
+`rollout_events_total` 的 series 首次出现即 1，无 0 基准，所以控制器重启后的第一次事件仍可能漏掉。决策是**保留现状**，把 abort 检测的主力交给 `TetrisRolloutDegraded`（查 `rollout_info` 的 phase，是 gauge），事件型告警只作为补充。
 
 ## 验证
 

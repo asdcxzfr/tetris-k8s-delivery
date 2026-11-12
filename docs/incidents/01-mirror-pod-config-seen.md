@@ -58,7 +58,7 @@ kubelet 起来 → 用当前 manifest 建 Pod → 短暂在线，apiserver 把 m
 
 **更隐蔽的一层**：`kubeadm reset` 没有真正清掉 `/var/lib/etcd`（etcd 日志里是 `restarting local member`，cluster 数据被复用）。所以重启计数跨 reset 延续（etcd 41 → 43、apiserver 48 → 50）——这是判断"不是陈旧状态、而是机器层面"的关键证据。
 
-## 修复（以及我自己制造的第二重坑）
+## 修复（以及第二层坑）
 
 正确的动作是一个**原子序列**，顺序错了等于白做：
 
@@ -97,7 +97,7 @@ systemctl restart kubelet                              # 干净环境下最后�
 
 ## 教训
 
-1. **"自己健康"不等于"对账成功"**。etcd 每次都完美启动，杀它的判据在别处；看 `restartCount` 增加只能证明"被杀"，不能证明"为什么被杀"，必须拿 kubelet 的视角（v4 日志）。
-2. **修复动作本身会改变被修复的状态**。kubelet 重启会重置 `config.seen`，所以"停-删-起"必须是原子序列，且之后不要再碰 kubelet。
-3. **对账类系统的排查终点是"两份副本的差异"**，不是"哪一方坏了"。挖出 mirror pod 与 manifest 逐字节对比，比任何猜测都省时间。
+1. **"自己健康"不等于"对账成功"**。etcd 每次都完美启动，杀它的判据在别处；看 `restartCount` 增加只能证明"被杀"，但无法找到根因，必须拿 kubelet 的视角（v4 日志）。
+2. **修复动作本身会改变被修复的状态**。kubelet 重启会重置 `config.seen`，所以固定序列是“停->删->起”，且之后不能再碰 kubelet。
+3. **对账类系统的排查终点是"两份副本的差异"**。挖出 mirror pod 与 manifest 逐字节对比，减少不必要的猜测。
 4. `kubeadm reset` 不等于环境干净；能重建机器时，重建比修更快。
