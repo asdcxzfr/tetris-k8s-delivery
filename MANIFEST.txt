@@ -55,4 +55,5 @@
 ./docs/incidents/12-pid1-signals.md                                  5275  a17af66b413a
 ./docs/incidents/README.md                                           3223  994d1d15abfe
 ./docs/raw/README.md                                                 4131  94bad29bd9f4
-./README.md                                                         17575  10571557ba08
+./LICENSE                                                            1062  80f3b542b397
+./README.md                                                         18356  1a66c7fe858d

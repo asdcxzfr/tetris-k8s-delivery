@@ -1,5 +1,14 @@
 # Tetris on Kubernetes — 最终交付快照
 
+> **定位：参考实现（Reference Implementation），不是一键部署项目。**
+>
+> 本仓库是个人 Kubernetes 实验环境的**交付快照**。清单里的 `harbor.local`、`192.168.164.x`、Harbor robot 凭据都指向作者的内网环境，**直接 `kubectl apply` 无法开箱即用**。
+> 它的价值在两端：可被抄走的配置（`02-k8s/`）与可被复用的故障复盘（`docs/incidents/`，12 篇），而不是一条 `make deploy`。
+>
+> **What this is:** a snapshot of a personal Kubernetes lab — Argo Rollouts canary + Prometheus-driven auto-rollback + 12 incident postmortems. Not a one-click deployment: the internal registry, hosts and credentials are environment-specific. Read it as a reference, copy the manifests, reuse the lessons.
+
+---
+
 ## 项目背景与定位
 
 本项目实际上是**前一项目的延伸**。
