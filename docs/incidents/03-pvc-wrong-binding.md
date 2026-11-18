@@ -45,7 +45,7 @@ kubectl get pv  -o custom-columns=NAME:.metadata.name,SIZE:.spec.capacity.storag
    ```yaml
    persistence:
      redis:
-       storageClass: gitlab-redis     # ← 原以为 chart 读这里
+       storageClass: gitlab-redis     #原位置
    ```
 
    但 chart 9.10.8 的 redis 是 subchart，实际读的是：
@@ -54,7 +54,7 @@ kubectl get pv  -o custom-columns=NAME:.metadata.name,SIZE:.spec.capacity.storag
    redis:
      master:
        persistence:
-         storageClassName: gitlab-redis   # ← chart 真正读这里
+         storageClassName: gitlab-redis   #实际位置
    ```
 
    umbrella chart 不把 subchart 的 values 暴露到顶层，传了等于没传，PVC 的 `storageClassName` 是**空**。
