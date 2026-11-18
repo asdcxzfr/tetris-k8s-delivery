@@ -89,8 +89,8 @@ kubectl delete gitlab gitlab -n gitlab-system && kubectl apply -f /mnt/gitlab/gi
 三条原则：
 
 1. **默认 StorageClass 必设**（`is-default-class: "true"`），否则空 class 的 PVC 永远在待分配。
-2. **`volumeBindingMode: WaitForFirstConsumer`**——PVC 与 Pod 都就绪后才绑，保证 PV 的本地目录和 Pod 在同一个节点；`Immediate` 模式下 local PV 会绑到任意节点导致 Pod 无处可调度。
-3. **手写 PV 要清干净**，遗留的 Available PV 永远是抢绑的候选。
+2. **`volumeBindingMode: WaitForFirstConsumer`**：PVC 与 Pod 都就绪后才绑，保证 PV 的本地目录和 Pod 在同一个节点；`Immediate` 模式下 local PV 会绑到任意节点导致 Pod 无处可调度。
+3. **手写 PV 要清干净**，遗留的 Available PV 永远有抢绑的可能。
 
 ## 验证
 
