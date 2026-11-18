@@ -20,7 +20,7 @@
 ```bash
 # 1. PVC 到底有没有 class
 kubectl describe pvc redis-data-gitlab-redis-master-0 -n gitlab-system
-#   StorageClass: <空>          （关键）
+#   StorageClass: <空>          
 #   Events: "no storage class is set"
 
 # 2. 有没有 class 这一栏，直接用列视图横向比
